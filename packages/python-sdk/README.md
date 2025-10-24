@@ -159,6 +159,104 @@ Get an entire chapter.
 
 Clear the response cache.
 
+## MCP Server
+
+LSBible includes a Model Context Protocol (MCP) server for integration with LLM applications like Claude Code and Claude Desktop. The MCP server exposes the SDK's functionality as tools, resources, and prompts.
+
+### Installation
+
+Install with MCP server support:
+
+```bash
+# Using uv (recommended)
+uv pip install lsbible[server]
+
+# Using pip
+pip install lsbible[server]
+
+# Or install as a tool for Claude Desktop
+uv tool install lsbible[server]
+```
+
+### Running the Server
+
+```bash
+# Direct command (if installed)
+lsbible-mcp
+
+# Or using uv run (development)
+uv run --project /path/to/python-sdk lsbible-mcp
+
+# Or via uvx (temporary run without installation)
+uvx --from lsbible[server] lsbible-mcp
+```
+
+### Claude Desktop Configuration
+
+Add to your Claude Desktop config file:
+
+**Option 1: Using uvx (recommended for installed package)**
+```json
+{
+  "mcpServers": {
+    "lsbible": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "lsbible[server]",
+        "lsbible-mcp"
+      ]
+    }
+  }
+}
+```
+
+**Option 2: Local development**
+```json
+{
+  "mcpServers": {
+    "lsbible-dev": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "/Users/kenny/workspace/kdcokenny/lsbible/packages/python-sdk",
+        "lsbible-mcp"
+      ]
+    }
+  }
+}
+```
+
+### Available MCP Features
+
+**Tools:**
+- `get_verse` - Fetch a single Bible verse
+- `get_passage` - Fetch a passage (multiple verses)
+- `get_chapter` - Fetch an entire chapter
+- `search_bible` - Search for verses containing text
+
+**Resources:**
+- `bible://books` - List all 66 books with metadata
+- `bible://structure/{book}` - Get chapter/verse structure for a book
+
+**Prompts:**
+- `bible_study` - Generate Bible study prompts for passages
+- `cross_reference` - Generate cross-reference analysis prompts
+
+### Example Usage in Claude
+
+Once configured, you can use natural language in Claude:
+
+```
+"Get John 3:16"
+"Search for verses about love"
+"Show me the structure of the book of Psalms"
+"Help me study Romans 8:28-39"
+```
+
+Claude will automatically use the appropriate MCP tools to fetch and display Bible content.
+
 ## Models
 
 ### BookName

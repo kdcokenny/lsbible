@@ -27,6 +27,14 @@ dependencies = [
     "lxml>=5.0.0",
 ]
 
+[project.optional-dependencies]
+server = [
+    "fastmcp>=1.0.0",
+]
+
+[project.scripts]
+lsbible-mcp = "lsbible.mcp.server:main"
+
 [project.urls]
 Homepage = "https://github.com/kdcokenny/lsbible"
 Documentation = "https://github.com/kdcokenny/lsbible/tree/main/packages/python-sdk"
@@ -41,6 +49,7 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
     "respx>=0.21.0",
+    "inline-snapshot>=0.7.0",
 ]
 
 [build-system]
