@@ -1,0 +1,33 @@
+name: Publish Python SDK to PyPI
+
+on:
+  push:
+    tags:
+      # Publish on tags for python-sdk package, e.g., python-sdk/v0.1.0
+      - python-sdk/v*
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write  # Required for trusted publishing
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Build Python SDK
+        working-directory: packages/python-sdk
+        run: uv build
+
+      - name: Publish to PyPI
+        working-directory: packages/python-sdk
+        run: uv publish

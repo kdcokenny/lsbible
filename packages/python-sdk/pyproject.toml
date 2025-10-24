@@ -8,12 +8,31 @@ authors = [
     { name = "Kenny", email = "lsbiblegh.g8d9w@passmail.net" }
 ]
 license = { text = "MIT" }
+keywords = ["bible", "lsb", "legacy-standard-bible", "api", "client", "sdk", "scripture"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Religion",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "httpx>=0.27.0",
     "beautifulsoup4>=4.12.0",
     "pydantic>=2.0.0",
     "lxml>=5.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kdcokenny/lsbible"
+Documentation = "https://github.com/kdcokenny/lsbible/tree/main/packages/python-sdk"
+Repository = "https://github.com/kdcokenny/lsbible"
+Issues = "https://github.com/kdcokenny/lsbible/issues"
+Changelog = "https://github.com/kdcokenny/lsbible/releases"
 
 [dependency-groups]
 dev = [
@@ -124,3 +143,9 @@ exclude_lines = [
 dev-dependencies = [
     "respx>=0.22.0",
 ]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
