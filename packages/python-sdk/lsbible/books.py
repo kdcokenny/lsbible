@@ -804,7 +804,7 @@ BIBLE_STRUCTURE: dict[int, BookInfo] = {
     },
     22: {
         "number": 22,
-        "name": "Song of Solomon",
+        "name": "Song of Songs",
         "testament": Testament.OLD_TESTAMENT,
         "chapters": 8,
         "verses": [17, 17, 11, 16, 16, 13, 13, 14],

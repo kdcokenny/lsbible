@@ -123,6 +123,9 @@ addopts = [
     "--cov=lsbible",
     "--cov-report=term-missing",
 ]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
 
 # Coverage configuration
 [tool.coverage.run]

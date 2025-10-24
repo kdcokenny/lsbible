@@ -115,3 +115,15 @@ def sample_multi_verse_response():
         },
         "__N_SSP": True,
     }
+
+
+@pytest.fixture
+def sample_passage_html_first_verse():
+    """First verse HTML structure (lacks <small data-verse> tag)."""
+    return """
+    <span class="verse first-verse" data-key="43-001-001">
+        <h3 class="subhead chapter-subhead">The Deity of Jesus Christ</h3>
+        <h2 class="chapter-number" data-chapter="1"></h2>
+        <span class="prose">In the beginning was the Word, and the Word was with God, and the Word was God.</span>
+    </span>
+    """

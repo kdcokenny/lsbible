@@ -46,7 +46,11 @@ class PassageParser:
 
         # Extract verse number
         verse_num_elem = verse_span.find("small", attrs={"data-verse": True})
-        verse_number = int(verse_num_elem.get("data-verse", reference.verse))
+        if verse_num_elem:
+            verse_number = int(verse_num_elem.get("data-verse"))
+        else:
+            # First verses lack <small> tag - fallback to data-key reference
+            verse_number = reference.verse
 
         # Check for subheading
         has_subheading = False
@@ -60,8 +64,8 @@ class PassageParser:
         is_poetry = verse_span.find_parent("p", class_="poetry") is not None
         is_prose = verse_span.find_parent("span", class_="prose") is not None
 
-        # Check if chapter start
-        chapter_start = verse_span.find("span", class_="chapter-number") is not None
+        # Check if chapter start (first verses have <h2 class="chapter-number">)
+        chapter_start = verse_span.find(class_="chapter-number") is not None
 
         # Extract text segments
         segments = PassageParser._extract_segments(verse_span)
@@ -102,9 +106,13 @@ class PassageParser:
         for small_elem in element.find_all("small", attrs={"data-verse": True}):
             small_elem.decompose()
 
-        # Remove chapter number elements
-        for chapter_elem in element.find_all("span", class_="chapter-number"):
+        # Remove chapter number elements (can be any tag with chapter-number class)
+        for chapter_elem in element.find_all(class_="chapter-number"):
             chapter_elem.decompose()
+
+        # Remove subheading elements (chapter-subhead and other subheadings)
+        for subhead_elem in element.find_all(class_="subhead"):
+            subhead_elem.decompose()
 
         # Process remaining text and formatting
         for content in element.descendants:

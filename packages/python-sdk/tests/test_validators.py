@@ -44,8 +44,8 @@ class TestBookValidator:
         result = BookValidator.normalize_book_name("1 Samuel")
         assert result == "1 Samuel"
 
-        result = BookValidator.normalize_book_name("song of solomon")
-        assert result == "Song of Solomon"
+        result = BookValidator.normalize_book_name("song of songs")
+        assert result == "Song of Songs"
 
     def test_normalize_book_name_invalid(self):
         """Test that invalid book names raise error."""

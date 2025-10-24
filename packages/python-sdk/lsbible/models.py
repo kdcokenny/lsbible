@@ -30,7 +30,7 @@ class BookName(str, Enum):
     PSALMS = "Psalms"
     PROVERBS = "Proverbs"
     ECCLESIASTES = "Ecclesiastes"
-    SONG_OF_SOLOMON = "Song of Solomon"
+    SONG_OF_SONGS = "Song of Songs"
     ISAIAH = "Isaiah"
     JEREMIAH = "Jeremiah"
     LAMENTATIONS = "Lamentations"

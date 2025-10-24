@@ -2,7 +2,7 @@
 
 import pytest
 
-from lsbible.models import BookName, VerseContent
+from lsbible.models import VerseContent
 from lsbible.parser import PassageParser
 
 
@@ -71,7 +71,9 @@ class TestPassageParser:
 
     def test_parse_verse_reference_from_data_key(self):
         """Test parsing verse reference from data-key attribute."""
-        html = '<span class="verse" data-key="43-003-016"><small data-verse="16">16</small>Test</span>'
+        html = (
+            '<span class="verse" data-key="43-003-016"><small data-verse="16">16</small>Test</span>'
+        )
         verses = PassageParser.parse_passage_html(html)
 
         assert len(verses) == 1
@@ -81,10 +83,29 @@ class TestPassageParser:
 
     def test_parse_verse_number_from_attribute(self):
         """Test parsing verse number from data-verse attribute."""
-        html = '<span class="verse" data-key="43-003-016"><small data-verse="16">16</small>Test</span>'
+        html = (
+            '<span class="verse" data-key="43-003-016"><small data-verse="16">16</small>Test</span>'
+        )
         verses = PassageParser.parse_passage_html(html)
 
         assert verses[0].verse_number == 16
+
+    def test_parse_first_verse_without_small_tag(self, sample_passage_html_first_verse):
+        """Test parsing first verse that lacks <small data-verse> tag."""
+        verses = PassageParser.parse_passage_html(sample_passage_html_first_verse)
+
+        assert len(verses) == 1
+        verse = verses[0]
+
+        # Verify it parsed correctly from data-key attribute
+        assert verse.reference.book_number == 43
+        assert verse.reference.chapter == 1
+        assert verse.reference.verse == 1
+        assert verse.verse_number == 1
+        assert "In the beginning" in verse.plain_text
+
+        # Verify chapter_start flag is detected (has <h2 class="chapter-number">)
+        assert verse.chapter_start is True
 
     def test_parse_multiple_verses(self):
         """Test parsing multiple verses."""
@@ -141,7 +162,10 @@ class TestPassageParser:
         formatted_text = verse.formatted_text
 
         # Red letter text should be in quotes
-        assert '"For God so loved the world' in formatted_text or '"For God so loved the world"' in formatted_text
+        assert (
+            '"For God so loved the world' in formatted_text
+            or '"For God so loved the world"' in formatted_text
+        )
 
         # Italic text should be in brackets
         assert "[only]" in formatted_text
