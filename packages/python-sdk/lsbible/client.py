@@ -27,7 +27,7 @@ class LSBibleClient:
         self._client = httpx.Client(timeout=timeout)
         self._cache = ResponseCache(ttl=cache_ttl)
         self._build_id = build_id
-        self._build_id_fetched = False
+        self._build_id_fetched = build_id is not None
 
     def _get_build_id(self) -> str:
         """

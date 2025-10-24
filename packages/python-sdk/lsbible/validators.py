@@ -1,5 +1,7 @@
 """Validators for Bible references."""
 
+import re
+
 from .books import BIBLE_STRUCTURE, BOOK_NUMBERS
 from .exceptions import InvalidReferenceError
 from .models import BookName, VerseReference
@@ -39,11 +41,18 @@ class BookValidator:
             book_num = BOOK_NUMBERS[book_lower]
             return BIBLE_STRUCTURE[book_num]["name"]
 
-        # Try fuzzy matching (handle "1John" vs "1 John")
+        # Try fuzzy matching (handle "1John" vs "1 John", "1john" vs "1 John")
         normalized = " ".join(book_lower.split())
         if normalized in BOOK_NUMBERS:
             book_num = BOOK_NUMBERS[normalized]
             return BIBLE_STRUCTURE[book_num]["name"]
+
+        # Try adding space after leading digit (e.g., "1john" -> "1 john")
+        if re.match(r"^\d", book_lower):
+            spaced = re.sub(r"^(\d+)([a-z])", r"\1 \2", book_lower)
+            if spaced in BOOK_NUMBERS:
+                book_num = BOOK_NUMBERS[spaced]
+                return BIBLE_STRUCTURE[book_num]["name"]
 
         raise InvalidReferenceError(f"Unknown book: {book}")
 
