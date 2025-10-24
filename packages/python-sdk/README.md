@@ -2,6 +2,8 @@
 
 A structured, type-safe Python client for the LSBible API at [read.lsbible.org](https://read.lsbible.org).
 
+> **Disclaimer:** This is an unofficial, third-party SDK and is not affiliated with, endorsed by, or connected to LSBible or its creators. This project is an independent client library for educational and development purposes.
+
 ## Features
 
 - **100% Type-Safe** - Full Pydantic validation with type hints

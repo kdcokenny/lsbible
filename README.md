@@ -2,6 +2,8 @@
 
 Multi-language SDK for the LSBible API at [read.lsbible.org](https://read.lsbible.org).
 
+> **Disclaimer:** This is an unofficial, third-party SDK and is not affiliated with, endorsed by, or connected to LSBible or its creators. This project is an independent client library for educational and development purposes.
+
 ## Overview
 
 The LSBible SDK provides structured, type-safe client libraries for interacting with the LSBible API. Instead of parsing strings like `"John 3:16"`, the SDK uses explicit parameters with full validation.
