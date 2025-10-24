@@ -1,9 +1,6 @@
 """Tests for response cache."""
 
-import time
 from unittest.mock import patch
-
-import pytest
 
 from lsbible.cache import ResponseCache
 

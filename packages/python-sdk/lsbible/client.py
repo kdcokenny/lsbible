@@ -1,6 +1,8 @@
 """LSBible API client."""
 
+import platform
 import re
+import sys
 
 import httpx
 
@@ -11,6 +13,32 @@ from .parser import PassageParser
 from .validators import BookValidator, ReferenceValidator
 
 
+def _get_user_agent() -> str:
+    """
+    Build User-Agent string for SDK requests.
+
+    Format: lsbible-python/VERSION (Python/X.Y.Z; PLATFORM; +https://github.com/kdcokenny/lsbible)
+
+    Returns:
+        User-Agent string
+    """
+    # Get SDK version
+    try:
+        from importlib.metadata import version
+
+        sdk_version = version("lsbible")
+    except Exception:
+        sdk_version = "0.0.0"  # Fallback for development
+
+    # Get Python version
+    python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+    # Get platform
+    platform_name = platform.system()
+
+    return f"lsbible-python/{sdk_version} (Python/{python_version}; {platform_name}; +https://github.com/kdcokenny/lsbible)"
+
+
 class LSBibleClient:
     """
     Client for interacting with the LSBible API.
@@ -19,12 +47,29 @@ class LSBibleClient:
         cache_ttl: Cache time-to-live in seconds (default: 3600)
         timeout: Request timeout in seconds (default: 30)
         build_id: Optional build ID (auto-detected if not provided)
+        headers: Optional custom headers (merged with defaults)
     """
 
     BASE_URL = "https://read.lsbible.org"
 
-    def __init__(self, cache_ttl: int = 3600, timeout: int = 30, build_id: str | None = None):
-        self._client = httpx.Client(timeout=timeout)
+    def __init__(
+        self,
+        cache_ttl: int = 3600,
+        timeout: int = 30,
+        build_id: str | None = None,
+        headers: dict[str, str] | None = None,
+    ):
+        # Build default headers with User-Agent
+        default_headers = {
+            "User-Agent": _get_user_agent(),
+            "Accept": "*/*",
+        }
+
+        # Merge with custom headers (custom headers take precedence)
+        if headers:
+            default_headers.update(headers)
+
+        self._client = httpx.Client(timeout=timeout, headers=default_headers)
         self._cache = ResponseCache(ttl=cache_ttl)
         self._build_id = build_id
         self._build_id_fetched = build_id is not None
@@ -102,7 +147,6 @@ class LSBibleClient:
                 url,
                 params={"q": query},
                 headers={
-                    "accept": "*/*",
                     "referer": f"{self.BASE_URL}/",
                     "x-nextjs-data": "1",
                 },

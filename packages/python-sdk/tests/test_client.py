@@ -129,9 +129,7 @@ class TestLSBibleClient:
             client.get_verse(BookName.JOHN, 3, 999)
 
     @respx.mock
-    def test_get_passage(
-        self, sample_homepage_html, sample_multi_verse_response
-    ):
+    def test_get_passage(self, sample_homepage_html, sample_multi_verse_response):
         """Test get_passage method for verse ranges."""
         respx.get("https://read.lsbible.org/").mock(
             return_value=Response(200, text=sample_homepage_html)
@@ -142,9 +140,7 @@ class TestLSBibleClient:
         ).mock(return_value=Response(200, json=sample_multi_verse_response))
 
         client = LSBibleClient()
-        passage = client.get_passage(
-            BookName.JOHN, 3, 16, BookName.JOHN, 3, 17
-        )
+        passage = client.get_passage(BookName.JOHN, 3, 16, BookName.JOHN, 3, 17)
 
         assert passage.from_ref.verse == 16
         assert passage.to_ref.verse == 17
@@ -284,6 +280,33 @@ class TestLSBibleClient:
         assert request.headers.get("accept") == "*/*"
         assert request.headers.get("referer") == "https://read.lsbible.org/"
         assert request.headers.get("x-nextjs-data") == "1"
+
+        # Verify User-Agent header is set
+        user_agent = request.headers.get("user-agent")
+        assert user_agent is not None
+        assert user_agent.startswith("lsbible-python/")
+        assert "Python/" in user_agent
+        assert "+https://github.com/kdcokenny/lsbible" in user_agent
+
+    @respx.mock
+    def test_custom_headers_override(self, sample_homepage_html, sample_api_response):
+        """Test that custom headers can override defaults."""
+        respx.get("https://read.lsbible.org/").mock(
+            return_value=Response(200, text=sample_homepage_html)
+        )
+        api_mock = respx.route(
+            method="GET",
+            url__regex=r"https://read\.lsbible\.org/_next/data/test-build-id-123/index\.json.*",
+        ).mock(return_value=Response(200, json=sample_api_response))
+
+        # Create client with custom User-Agent
+        custom_ua = "my-custom-client/1.0"
+        client = LSBibleClient(headers={"User-Agent": custom_ua})
+        client.search("test")
+
+        # Verify custom User-Agent is used
+        request = api_mock.calls.last.request
+        assert request.headers.get("user-agent") == custom_ua
 
     @respx.mock
     def test_no_passages_raises_error(self, sample_homepage_html):

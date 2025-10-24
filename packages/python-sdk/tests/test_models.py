@@ -7,7 +7,6 @@ from lsbible.models import (
     BookName,
     Passage,
     SearchResponse,
-    Testament,
     TextSegment,
     VerseContent,
     VerseReference,
@@ -199,9 +198,7 @@ class TestVerseContent:
         """Test poetry verse."""
         ref = VerseReference(book_number=19, chapter=23, verse=1)
         segments = [TextSegment(text="The LORD is my shepherd")]
-        verse = VerseContent(
-            reference=ref, verse_number=1, segments=segments, is_poetry=True
-        )
+        verse = VerseContent(reference=ref, verse_number=1, segments=segments, is_poetry=True)
 
         assert verse.is_poetry is True
         assert verse.is_prose is False
@@ -218,9 +215,7 @@ class TestPassage:
             reference=from_ref, verse_number=16, segments=[TextSegment(text="test")]
         )
 
-        passage = Passage(
-            from_ref=from_ref, to_ref=to_ref, title="John 3:16", verses=[verse]
-        )
+        passage = Passage(from_ref=from_ref, to_ref=to_ref, title="John 3:16", verses=[verse])
 
         assert passage.from_ref == from_ref
         assert passage.to_ref == to_ref
@@ -255,9 +250,7 @@ class TestPassage:
             reference=from_ref, verse_number=16, segments=[TextSegment(text="verse 16")]
         )
 
-        passage = Passage(
-            from_ref=from_ref, to_ref=to_ref, title="John 3:16-4:1", verses=[verse1]
-        )
+        passage = Passage(from_ref=from_ref, to_ref=to_ref, title="John 3:16-4:1", verses=[verse1])
 
         assert passage.is_single_verse is False
 
@@ -272,9 +265,7 @@ class TestSearchResponse:
         verse = VerseContent(
             reference=from_ref, verse_number=16, segments=[TextSegment(text="test")]
         )
-        passage = Passage(
-            from_ref=from_ref, to_ref=to_ref, title="John 3:16", verses=[verse]
-        )
+        passage = Passage(from_ref=from_ref, to_ref=to_ref, title="John 3:16", verses=[verse])
 
         response = SearchResponse(
             query="John 3:16",
@@ -300,12 +291,8 @@ class TestSearchResponse:
         verse2 = VerseContent(
             reference=ref2, verse_number=8, segments=[TextSegment(text="verse 2")]
         )
-        passage1 = Passage(
-            from_ref=ref1, to_ref=ref1, title="John 3:16", verses=[verse1]
-        )
-        passage2 = Passage(
-            from_ref=ref2, to_ref=ref2, title="1 John 4:8", verses=[verse2]
-        )
+        passage1 = Passage(from_ref=ref1, to_ref=ref1, title="John 3:16", verses=[verse1])
+        passage2 = Passage(from_ref=ref2, to_ref=ref2, title="1 John 4:8", verses=[verse2])
 
         response = SearchResponse(
             query="love",
@@ -324,9 +311,7 @@ class TestSearchResponse:
         verse = VerseContent(
             reference=from_ref, verse_number=16, segments=[TextSegment(text="test")]
         )
-        passage = Passage(
-            from_ref=from_ref, to_ref=from_ref, title="John 3:16", verses=[verse]
-        )
+        passage = Passage(from_ref=from_ref, to_ref=from_ref, title="John 3:16", verses=[verse])
         response = SearchResponse(
             query="test", match_count=0, passages=[passage], duration_ms=1, timestamp=123
         )
