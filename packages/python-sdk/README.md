@@ -231,10 +231,13 @@ Add to your Claude Desktop config file:
 ### Available MCP Features
 
 **Tools:**
-- `get_verse` - Fetch a single Bible verse
-- `get_passage` - Fetch a passage (multiple verses)
+- `get_verse` - Fetch a single Bible verse with formatting
+- `get_passage` - Fetch a passage (multiple verses) with formatting
 - `get_chapter` - Fetch an entire chapter
-- `search_bible` - Search for verses containing text
+- `search_bible` - Search for verses containing text with distribution metadata
+  - Returns match count and verse results
+  - For text searches, includes distribution across Bible sections and books
+  - Supports limiting results (default: 10)
 
 **Resources:**
 - `bible://books` - List all 66 books with metadata
@@ -256,6 +259,51 @@ Once configured, you can use natural language in Claude:
 ```
 
 Claude will automatically use the appropriate MCP tools to fetch and display Bible content.
+
+### Search Distribution Metadata
+
+When using `search_bible` for text queries (not Bible references), the tool returns rich distribution metadata showing how matches are spread across the Bible:
+
+**Example response:**
+```json
+{
+  "query": "love",
+  "results": [
+    {
+      "reference": "Genesis 22:2",
+      "text": "Then He said, \"Take now your son, your only one, whom you love...\""
+    }
+  ],
+  "result_count": 10,
+  "total_matches": 436,
+  "distribution": {
+    "by_section": {
+      "Pentateuch": 41,
+      "History": 35,
+      "Wisdom and Poetry": 95,
+      "Major Prophets": 20,
+      "Minor Prophets": 19,
+      "Gospels and Acts": 65,
+      "Pauline Epistles": 101,
+      "General Epistles": 60
+    },
+    "by_book": {
+      "Genesis": 12,
+      "Exodus": 5,
+      "John": 18,
+      "1 Corinthians": 15,
+      ...
+    },
+    "total_count": 436,
+    "filtered_count": 436
+  }
+}
+```
+
+This metadata helps understand:
+- Which parts of the Bible most frequently discuss a topic
+- Testament distribution (Old vs New Testament)
+- Concentration in specific books or sections
 
 ## Models
 
@@ -333,15 +381,36 @@ Response from a search or verse lookup:
 ```python
 response = SearchResponse(
     query="love",
-    match_count=0,
+    match_count=436,
     passages=[...],
     duration_ms=5,
-    timestamp=1234567890
+    timestamp=1234567890,
+    # Optional metadata for text searches
+    total_count=436,
+    filtered_count=436,
+    counts_by_book={1: 12, 43: 18, ...},
+    counts_by_section={1: 41, 6: 65, 7: 101, ...}
 )
 
-print(response.passage_count)  # Number of passages
-print(response.total_verses)   # Total verses across all passages
+print(response.passage_count)     # Number of passages
+print(response.total_verses)      # Total verses across all passages
+print(response.has_search_metadata)  # True if includes distribution data
+
+# Access distribution metadata (text searches only)
+if response.has_search_metadata:
+    print(response.counts_by_section)  # Distribution across Bible sections
+    print(response.counts_by_book)     # Distribution across individual books
 ```
+
+**Bible Sections:**
+1. Pentateuch (Genesis - Deuteronomy)
+2. History (Joshua - Esther)
+3. Wisdom and Poetry (Job - Song of Songs)
+4. Major Prophets (Isaiah - Daniel)
+5. Minor Prophets (Hosea - Malachi)
+6. Gospels and Acts (Matthew - Acts)
+7. Pauline Epistles (Romans - Philemon)
+8. General Epistles (Hebrews - Jude, Revelation)
 
 ## Development
 
