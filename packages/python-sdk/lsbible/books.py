@@ -1,8 +1,22 @@
 """Bible structure data for all 66 books."""
 
+from enum import Enum
 from typing import TypedDict
 
 from .models import Testament
+
+
+class BibleSection(str, Enum):
+    """Bible sections for search result organization."""
+
+    PENTATEUCH = "Pentateuch"
+    HISTORY = "History"
+    WISDOM_AND_POETRY = "Wisdom and Poetry"
+    MAJOR_PROPHETS = "Major Prophets"
+    MINOR_PROPHETS = "Minor Prophets"
+    GOSPELS_AND_ACTS = "Gospels and Acts"
+    PAULINE_EPISTLES = "Pauline Epistles"
+    GENERAL_EPISTLES = "General Epistles"
 
 
 class BookInfo(TypedDict):
@@ -1422,4 +1436,16 @@ BOOK_NAMES: dict[int, str] = {book["number"]: book["name"] for book in BIBLE_STR
 # Reverse lookup by name to book number
 BOOK_NUMBERS: dict[str, int] = {
     book["name"].lower(): book["number"] for book in BIBLE_STRUCTURE.values()
+}
+
+# Bible sections for search result organization
+SECTION_NAMES: dict[int, str] = {
+    1: BibleSection.PENTATEUCH,
+    2: BibleSection.HISTORY,
+    3: BibleSection.WISDOM_AND_POETRY,
+    4: BibleSection.MAJOR_PROPHETS,
+    5: BibleSection.MINOR_PROPHETS,
+    6: BibleSection.GOSPELS_AND_ACTS,
+    7: BibleSection.PAULINE_EPISTLES,
+    8: BibleSection.GENERAL_EPISTLES,
 }

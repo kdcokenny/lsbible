@@ -187,7 +187,7 @@ def search_bible(query: str, limit: int = 10) -> dict:
         limit: Maximum number of results (default: 10)
 
     Returns:
-        Dictionary with matching verses and their references
+        Dictionary with matching verses, their references, and optional distribution metadata
 
     Implementation Notes:
     - SDK's search() method signature: search(query: str) -> SearchResponse
@@ -195,6 +195,7 @@ def search_bible(query: str, limit: int = 10) -> dict:
     - Limiting is implemented via post-processing of results
     - SearchResponse.passages contains Passage objects, each with verses
     - We flatten the structure to individual verses for easier consumption
+    - For text searches, includes distribution across Bible sections and books
     """
     try:
         result = client.search(query)
@@ -209,12 +210,39 @@ def search_bible(query: str, limit: int = 10) -> dict:
             if len(all_verses) >= limit:
                 break
 
-        return {
+        response = {
             "query": query,
             "results": all_verses,
             "result_count": len(all_verses),
             "total_matches": result.match_count,
         }
+
+        # Add distribution metadata if available (text search results)
+        if result.has_search_metadata:
+            from lsbible.books import BIBLE_STRUCTURE, SECTION_NAMES
+
+            # Convert section IDs to section names
+            section_distribution = {}
+            if result.counts_by_section:
+                for section_id, count in result.counts_by_section.items():
+                    section_name = SECTION_NAMES.get(section_id, f"Section {section_id}")
+                    section_distribution[section_name] = count
+
+            # Convert book IDs to book names
+            book_distribution = {}
+            if result.counts_by_book:
+                for book_id, count in result.counts_by_book.items():
+                    book_name = BIBLE_STRUCTURE.get(book_id, {}).get("name", f"Book {book_id}")
+                    book_distribution[book_name] = count
+
+            response["distribution"] = {
+                "by_section": section_distribution,
+                "by_book": book_distribution,
+                "total_count": result.total_count,
+                "filtered_count": result.filtered_count,
+            }
+
+        return response
     except (APIError, BuildIDError) as e:
         raise RuntimeError(f"Search failed: {e}") from e
 

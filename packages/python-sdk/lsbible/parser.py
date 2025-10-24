@@ -9,6 +9,24 @@ class PassageParser:
     """Parse HTML passages into structured VerseContent objects."""
 
     @staticmethod
+    def parse_search_result_html(html: str) -> str:
+        """
+        Parse search result HTML snippet into plain text.
+
+        Search results include HTML snippets with <b> tags highlighting
+        matched terms. This function strips the tags but preserves the text.
+
+        Args:
+            html: HTML snippet from search results (e.g., "For God so <b>loved</b> the world")
+
+        Returns:
+            Plain text with highlighting removed (e.g., "For God so loved the world")
+        """
+        soup = BeautifulSoup(html, "lxml")
+        # Get text content, which automatically strips tags but preserves text
+        return soup.get_text(strip=True)
+
+    @staticmethod
     def parse_passage_html(html: str) -> list[VerseContent]:
         """
         Parse passageHtml into structured verse objects.

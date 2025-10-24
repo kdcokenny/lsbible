@@ -120,19 +120,112 @@ class LSBibleClient:
         except Exception as e:
             raise APIError(f"API request failed: {e}") from e
 
-    def _parse_response(self, data: dict, query: str) -> SearchResponse:
+    def _is_text_search(self, page_props: dict) -> bool:
         """
-        Parse API response into SearchResponse.
+        Detect if response is from text search or Bible reference lookup.
+
+        Text searches have:
+        - initialItems array (search results)
+        - totalCount, filteredCount
+        - countsByBook, countsBySection
+
+        Bible reference lookups have:
+        - passages array (full passage HTML)
+        - searchMatchCount (usually 0)
+        """
+        return "initialItems" in page_props and "totalCount" in page_props
+
+    def _parse_search_results(self, page_props: dict, query: str) -> SearchResponse:
+        """
+        Parse text search results from initialItems format.
 
         Args:
-            data: Raw API response
+            page_props: pageProps from API response
+            query: Original search query
+
+        Returns:
+            SearchResponse with search metadata
+        """
+        passages = []
+
+        # Parse each search result item
+        for item in page_props.get("initialItems", []):
+            # Parse the key (e.g., "43-003-016" -> John 3:16)
+            key = item.get("key", "")
+            parts = key.split("-")
+            if len(parts) != 3:
+                continue
+
+            book_number = int(parts[0])
+            chapter = int(parts[1])
+            verse = int(parts[2])
+
+            # Create verse reference
+            verse_ref = VerseReference(book_number=book_number, chapter=chapter, verse=verse)
+
+            # Parse HTML snippet to plain text
+            html_snippet = item.get("html", "")
+            plain_text = PassageParser.parse_search_result_html(html_snippet)
+
+            # Create a minimal VerseContent (we don't have full formatting data)
+            from .models import TextSegment, VerseContent
+
+            verse_content = VerseContent(
+                reference=verse_ref,
+                verse_number=verse,
+                segments=[TextSegment(text=plain_text)],
+                has_subheading=False,
+                subheading_text=None,
+                is_poetry=False,
+                is_prose=False,
+                chapter_start=False,
+            )
+
+            # Create a single-verse passage
+            passages.append(
+                Passage(
+                    from_ref=verse_ref,
+                    to_ref=verse_ref,
+                    title=str(verse_ref),
+                    verses=[verse_content],
+                )
+            )
+
+        # Extract metadata
+        total_count = page_props.get("totalCount", 0)
+        filtered_count = page_props.get("filteredCount", 0)
+        counts_by_book = page_props.get("countsByBook", {})
+        counts_by_section = page_props.get("countsBySection", {})
+
+        # Convert string keys to int for consistency
+        counts_by_book = {int(k): v for k, v in counts_by_book.items()} if counts_by_book else None
+        counts_by_section = (
+            {int(k): v for k, v in counts_by_section.items()} if counts_by_section else None
+        )
+
+        return SearchResponse(
+            query=query,
+            match_count=total_count,
+            passages=passages,
+            duration_ms=page_props.get("duration", 0),
+            timestamp=page_props.get("start", 0),
+            total_count=total_count,
+            filtered_count=filtered_count,
+            counts_by_book=counts_by_book,
+            counts_by_section=counts_by_section,
+        )
+
+    def _parse_reference_results(self, page_props: dict, query: str) -> SearchResponse:
+        """
+        Parse Bible reference lookup results from passages format.
+
+        Args:
+            page_props: pageProps from API response
             query: Original query
 
         Returns:
-            SearchResponse object
+            SearchResponse without search metadata
         """
-        page_props = data.get("pageProps", {})
-
         passages = []
         for passage_data in page_props.get("passages", []):
             from_data = passage_data["from"]
@@ -170,6 +263,28 @@ class LSBibleClient:
             duration_ms=page_props.get("duration", 0),
             timestamp=page_props.get("start", 0),
         )
+
+    def _parse_response(self, data: dict, query: str) -> SearchResponse:
+        """
+        Parse API response into SearchResponse.
+
+        Handles two response formats:
+        1. Text search (initialItems format with rich metadata)
+        2. Bible reference lookup (passages format with full HTML)
+
+        Args:
+            data: Raw API response
+            query: Original query
+
+        Returns:
+            SearchResponse object
+        """
+        page_props = data.get("pageProps", {})
+
+        if self._is_text_search(page_props):
+            return self._parse_search_results(page_props, query)
+        else:
+            return self._parse_reference_results(page_props, query)
 
     def search(self, query: str) -> SearchResponse:
         """

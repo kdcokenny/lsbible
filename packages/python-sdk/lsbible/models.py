@@ -203,7 +203,11 @@ class Passage(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """Response from a search or verse lookup."""
+    """Response from a search or verse lookup.
+
+    For text searches, includes rich metadata about result distribution across
+    Bible sections and books. For Bible reference lookups, these fields are None.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -212,6 +216,16 @@ class SearchResponse(BaseModel):
     passages: list[Passage]
     duration_ms: int = Field(ge=0, description="Query duration in milliseconds")
     timestamp: int = Field(description="Unix timestamp in milliseconds")
+
+    # Optional metadata for text searches
+    total_count: int | None = Field(None, ge=0, description="Total matches found (text search)")
+    filtered_count: int | None = Field(None, ge=0, description="Filtered matches (text search)")
+    counts_by_book: dict[int, int] | None = Field(
+        None, description="Match distribution by book number"
+    )
+    counts_by_section: dict[int, int] | None = Field(
+        None, description="Match distribution by Bible section"
+    )
 
     @property
     def passage_count(self) -> int:
@@ -222,3 +236,8 @@ class SearchResponse(BaseModel):
     def total_verses(self) -> int:
         """Get total number of verses across all passages."""
         return sum(p.verse_count for p in self.passages)
+
+    @property
+    def has_search_metadata(self) -> bool:
+        """Check if this response includes search distribution metadata."""
+        return self.total_count is not None
