@@ -140,7 +140,7 @@ with LSBibleClient() as client:
 <summary><b>Install in Claude Code</b></summary>
 
 ```bash
-claude mcp add lsbible -- uvx --from lsbible[server] lsbible-mcp
+claude mcp add lsbible -- uvx --from 'lsbible[server]' lsbible-mcp
 ```
 
 </details>
@@ -250,7 +250,7 @@ Example: Searching for "love" shows 436 total matches, with 101 in Pauline Epist
 ```bash
 uv pip install lsbible
 # Or with MCP server support
-uv pip install lsbible[server]
+uv pip install 'lsbible[server]'
 ```
 
 **Key Stats:**

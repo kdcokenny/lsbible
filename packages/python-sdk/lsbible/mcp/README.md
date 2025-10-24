@@ -72,7 +72,7 @@ Paste the configuration into your `~/.cursor/mcp.json` file. You may also instal
 
 First install globally:
 ```bash
-uv tool install lsbible[server]
+uv tool install 'lsbible[server]'
 ```
 
 Then configure:
@@ -97,13 +97,13 @@ For more info, see [Cursor MCP docs](https://docs.cursor.com/context/model-conte
 Run this command in your terminal:
 
 ```bash
-claude mcp add lsbible -- uvx --from lsbible[server] lsbible-mcp
+claude mcp add lsbible -- uvx --from 'lsbible[server]' lsbible-mcp
 ```
 
 Or if you've installed it as a tool:
 
 ```bash
-uv tool install lsbible[server]
+uv tool install 'lsbible[server]'
 claude mcp add lsbible -- lsbible-mcp
 ```
 
@@ -135,7 +135,7 @@ Add this configuration to your `claude_desktop_config.json`:
 
 First install:
 ```bash
-uv tool install lsbible[server]
+uv tool install 'lsbible[server]'
 ```
 
 Then configure:
@@ -184,7 +184,7 @@ Add this to your VS Code settings file (`.vscode/settings.json` or global settin
 
 First install:
 ```bash
-uv tool install lsbible[server]
+uv tool install 'lsbible[server]'
 ```
 
 Then configure:
@@ -228,7 +228,7 @@ Add this to your Windsurf MCP config file:
 
 First install:
 ```bash
-uv tool install lsbible[server]
+uv tool install 'lsbible[server]'
 ```
 
 Then configure:
@@ -383,7 +383,7 @@ For more info, see [JetBrains AI Assistant docs](https://www.jetbrains.com/help/
 
 1. Click hamburger menu → **Settings** → **Tools**
 2. Click **+ Add MCP**
-3. Enter command: `uvx --from lsbible[server] lsbible-mcp`
+3. Enter command: `uvx --from 'lsbible[server]' lsbible-mcp`
 4. Name: **LSBible**
 5. Click **Add**
 
@@ -445,7 +445,7 @@ If you prefer `pip` over `uv`:
 
 **Install:**
 ```bash
-pip install lsbible[server]
+pip install 'lsbible[server]'
 ```
 
 **Configure:**
@@ -484,7 +484,7 @@ If `uvx` is not found:
 1. Install uv following the [official installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 2. Or use the pre-installed tool method instead:
    ```bash
-   uv tool install lsbible[server]
+   uv tool install 'lsbible[server]'
    ```
    Then use `lsbible-mcp` as the command
 
@@ -510,7 +510,7 @@ Try these steps:
 
 1. **Check installation**:
    ```bash
-   uvx --from lsbible[server] lsbible-mcp --help
+   uvx --from 'lsbible[server]' lsbible-mcp --help
    ```
 
 2. **View server logs** in your MCP client's developer console
@@ -518,7 +518,7 @@ Try these steps:
 3. **Try reinstalling**:
    ```bash
    uv tool uninstall lsbible
-   uv tool install lsbible[server]
+   uv tool install 'lsbible[server]'
    ```
 
 </details>
