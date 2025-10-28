@@ -1,0 +1,63 @@
+{
+  "name": "lsbible",
+  "version": "0.1.0",
+  "description": "LSBible API client - structured, type-safe Bible SDK for TypeScript",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check src tests examples",
+    "lint:fix": "biome check --write src tests examples",
+    "dev": "tsup --watch"
+  },
+  "keywords": [
+    "bible",
+    "lsb",
+    "legacy-standard-bible",
+    "scripture",
+    "api-client",
+    "typescript"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.23.8",
+    "linkedom": "^0.18.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "^1.3.1",
+    "@types/node": "^22.9.3",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kdcokenny/lsbible.git",
+    "directory": "packages/typescript-sdk"
+  }
+}
