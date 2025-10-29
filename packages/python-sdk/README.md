@@ -22,8 +22,6 @@ The **Legacy Standard Bible (LSB)** is a modern literal translation that priorit
 
 The LSB's literal approach makes it ideal for serious Bible study, and its structured HTML output is perfect for SDK development, preserving formatting like red-letter text for Jesus' words and italics for translator clarifications.
 
-> **🤖 Looking for MCP Server setup?** This documentation covers the Python SDK for programmatic Bible access. For MCP server installation (Cursor, Claude Desktop, VS Code, etc.), see the **[MCP Installation Guide →](./lsbible/mcp/README.md)**
-
 ## Table of Contents
 
 - [Why the LSB?](#why-the-lsb)
@@ -57,8 +55,6 @@ The LSB's literal approach makes it ideal for serious Bible study, and its struc
 - ✅ **Immutable Models** - All data structures are frozen for safety
 - ✅ **Comprehensive Tests** - >80% code coverage with thorough test suite
 
-> **Note:** This SDK also includes an MCP server for integration with Claude Desktop, Cursor, and other AI coding assistants. See the [MCP Installation Guide](./lsbible/mcp/README.md) for setup instructions.
-
 ## Installation
 
 Install the LSBible Python SDK using your preferred package manager:
@@ -70,8 +66,6 @@ uv pip install lsbible
 # Using pip
 pip install lsbible
 ```
-
-> **🤖 For MCP Server Installation:** To use LSBible with Cursor, Claude Desktop, VS Code, or other MCP clients, see the **[MCP Installation Guide](./lsbible/mcp/README.md)** with step-by-step instructions for all supported clients.
 
 ## Quick Start
 
@@ -100,8 +94,6 @@ with LSBibleClient() as client:
     results = client.search("love")
     print(f"Found {results.match_count} passages")
 ```
-
-> **🤖 For MCP Usage:** To use LSBible with Claude Desktop, Cursor, or VS Code, see the **[MCP Installation Guide](./lsbible/mcp/README.md)** for setup and usage examples.
 
 ## SDK Usage Guide
 
@@ -703,9 +695,6 @@ cd lsbible/packages/python-sdk
 
 # Install dependencies
 uv sync
-
-# Install with MCP server support
-uv sync --extra server
 ```
 
 ### Commands
@@ -729,9 +718,6 @@ uv run ruff check lsbible --fix  # Auto-fix
 
 # Formatting
 uv run ruff format lsbible
-
-# Run MCP server locally
-uv run lsbible-mcp
 ```
 
 ### Project Structure
@@ -746,9 +732,7 @@ packages/python-sdk/
 │   ├── validators.py     # Reference validation
 │   ├── books.py          # Bible structure data
 │   ├── cache.py          # Response caching
-│   ├── exceptions.py     # Custom exceptions
-│   └── mcp/              # MCP server
-│       └── server.py     # FastMCP server
+│   └── exceptions.py     # Custom exceptions
 ├── tests/                # Test suite
 ├── examples/             # Usage examples
 ├── README.md             # This file

@@ -24,6 +24,25 @@ pnpm add lsbible
 bun add lsbible
 ```
 
+## MCP Server
+
+This SDK also includes a **Model Context Protocol (MCP) server** for integration with AI coding assistants like Cursor, Claude Code, VS Code, and more.
+
+> **🤖 For MCP Server Installation:** To use LSBible with AI coding tools, see the **[MCP Installation Guide →](./mcp/README.md)** with step-by-step instructions for 20+ supported clients.
+
+**Quick Install Examples:**
+
+```sh
+# Claude Code (remote)
+claude mcp add --transport http lsbible https://lsbible.kdco.dev/mcp
+
+# Claude Code (local)
+claude mcp add lsbible -- npx -y lsbible-mcp
+
+# Cursor/VS Code/etc. (see full guide)
+# Add to your MCP config file - see mcp/README.md for details
+```
+
 ## Quick Start
 
 ```typescript
