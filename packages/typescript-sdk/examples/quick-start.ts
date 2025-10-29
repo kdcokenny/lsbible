@@ -63,8 +63,6 @@ async function main() {
     console.log(`   Text: ${verseFromString.verses[0]?.plainText.substring(0, 80)}...`);
     console.log();
 
-    // Clean up
-    client.clearCache();
     console.log("✅ All examples completed successfully!");
   } catch (error) {
     if (error instanceof Error) {

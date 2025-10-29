@@ -16,7 +16,20 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./mcp": {
+      "import": {
+        "types": "./dist/mcp/index.d.ts",
+        "default": "./dist/mcp/index.js"
+      },
+      "require": {
+        "types": "./dist/mcp/index.d.cts",
+        "default": "./dist/mcp/index.cjs"
+      }
     }
+  },
+  "bin": {
+    "lsbible-mcp": "./dist/mcp/stdio.js"
   },
   "files": [
     "dist"
@@ -39,11 +52,12 @@
     "api-client",
     "typescript"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Kenny <lsbiblegh.g8d9w@passmail.net",
   "license": "MIT",
   "dependencies": {
-    "zod": "^3.23.8",
-    "linkedom": "^0.18.5"
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "linkedom": "^0.18.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

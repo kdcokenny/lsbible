@@ -3,7 +3,7 @@
  */
 
 import { BIBLE_STRUCTURE } from "./books.js";
-import { ResponseCache } from "./cache.js";
+import { type CacheOptions, type CacheProvider, CacheTTL } from "./cache/interface.js";
 import { APIError, BuildIDError } from "./exceptions.js";
 import {
   type BookName,
@@ -20,14 +20,14 @@ import { getBookNumber, normalizeBookName, validateReference } from "./validator
 
 /** Client configuration options */
 export interface LSBibleClientOptions {
-  /** Cache time-to-live in seconds (default: 3600) */
-  cacheTtl?: number;
   /** Request timeout in seconds (default: 30) */
   timeout?: number;
   /** Optional build ID (auto-detected if not provided) */
   buildId?: string;
   /** Optional custom headers */
   headers?: Record<string, string>;
+  /** Optional cache configuration */
+  cache?: CacheOptions;
 }
 
 /**
@@ -68,7 +68,8 @@ function getUserAgent(): string {
 export class LSBibleClient {
   private static readonly BASE_URL = "https://read.lsbible.org";
 
-  private cache: ResponseCache;
+  private cacheProvider: CacheProvider | undefined;
+  private cacheTtls: Required<NonNullable<CacheOptions["ttl"]>>;
   private timeout: number;
   private buildId: string | undefined;
   private buildIdFetched: boolean;
@@ -80,7 +81,13 @@ export class LSBibleClient {
    * @param options - Client configuration options
    */
   constructor(options: LSBibleClientOptions = {}) {
-    this.cache = new ResponseCache(options.cacheTtl ?? 3600);
+    this.cacheProvider = options.cache?.provider ?? undefined;
+    this.cacheTtls = {
+      verse: options.cache?.ttl?.verse ?? CacheTTL.BIBLE_CONTENT,
+      passage: options.cache?.ttl?.passage ?? CacheTTL.BIBLE_CONTENT,
+      chapter: options.cache?.ttl?.chapter ?? CacheTTL.BIBLE_CONTENT,
+      search: options.cache?.ttl?.search ?? CacheTTL.SEARCH_RESULTS,
+    };
     this.timeout = (options.timeout ?? 30) * 1000; // Convert to milliseconds
     this.buildId = options.buildId;
     this.buildIdFetched = options.buildId !== undefined;
@@ -151,6 +158,35 @@ export class LSBibleClient {
   }
 
   /**
+   * Cache wrapper for async operations.
+   *
+   * @param key - Cache key
+   * @param ttl - Time to live in seconds
+   * @param fetcher - Function to fetch fresh data
+   * @returns Cached or fresh data
+   */
+  private async withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>): Promise<T> {
+    // If no cache provider, just fetch
+    if (!this.cacheProvider) {
+      return fetcher();
+    }
+
+    // Try to get from cache
+    const cached = await this.cacheProvider.get<T>(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    // Fetch fresh data
+    const data = await fetcher();
+
+    // Store in cache
+    await this.cacheProvider.set(key, data, ttl);
+
+    return data;
+  }
+
+  /**
    * Make a request to the LSBible API.
    *
    * @param query - Search query or verse reference
@@ -158,13 +194,6 @@ export class LSBibleClient {
    * @throws APIError if request fails
    */
   private async makeRequest(query: string): Promise<unknown> {
-    // Check cache first
-    const cacheKey = `query:${query}`;
-    const cached = this.cache.get<unknown>(cacheKey);
-    if (cached !== undefined) {
-      return cached;
-    }
-
     // Get build ID
     const buildId = await this.getBuildId();
 
@@ -194,12 +223,7 @@ export class LSBibleClient {
         );
       }
 
-      const data = await response.json();
-
-      // Cache the response
-      this.cache.set(cacheKey, data);
-
-      return data;
+      return await response.json();
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
@@ -361,8 +385,10 @@ export class LSBibleClient {
    * @throws APIError if API request fails
    */
   async search(query: string): Promise<SearchResponse> {
-    const data = await this.makeRequest(query);
-    return this.parseResponse(data, query);
+    return this.withCache(`search:${query}`, this.cacheTtls.search, async () => {
+      const data = await this.makeRequest(query);
+      return this.parseResponse(data, query);
+    });
   }
 
   /**
@@ -392,20 +418,22 @@ export class LSBibleClient {
     const bookName = normalizeBookName(book);
     const query = `${bookName} ${chapter}:${verse}`;
 
-    // Make request
-    const response = await this.search(query);
+    return this.withCache(`verse:${query}`, this.cacheTtls.verse, async () => {
+      // Make request
+      const response = await this.search(query);
 
-    // Return first passage (should be only one for single verse)
-    if (response.passages.length === 0) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      // Return first passage (should be only one for single verse)
+      if (response.passages.length === 0) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    const passage = response.passages[0];
-    if (!passage) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      const passage = response.passages[0];
+      if (!passage) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    return passage;
+      return passage;
+    });
   }
 
   /**
@@ -461,20 +489,22 @@ export class LSBibleClient {
       query = `${fromBookName} ${fromChapter}:${fromVerse}-${toBookName} ${toChapter}:${toVerse}`;
     }
 
-    // Make request
-    const response = await this.search(query);
+    return this.withCache(`passage:${query}`, this.cacheTtls.passage, async () => {
+      // Make request
+      const response = await this.search(query);
 
-    // Return first passage
-    if (response.passages.length === 0) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      // Return first passage
+      if (response.passages.length === 0) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    const passage = response.passages[0];
-    if (!passage) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      const passage = response.passages[0];
+      if (!passage) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    return passage;
+      return passage;
+    });
   }
 
   /**
@@ -513,26 +543,21 @@ export class LSBibleClient {
     const bookName = normalizeBookName(book);
     const query = `${bookName} ${chapter}`;
 
-    // Make request
-    const response = await this.search(query);
+    return this.withCache(`chapter:${query}`, this.cacheTtls.chapter, async () => {
+      // Make request
+      const response = await this.search(query);
 
-    // Return first passage
-    if (response.passages.length === 0) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      // Return first passage
+      if (response.passages.length === 0) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    const passage = response.passages[0];
-    if (!passage) {
-      throw new APIError(`No passage found for ${query}`);
-    }
+      const passage = response.passages[0];
+      if (!passage) {
+        throw new APIError(`No passage found for ${query}`);
+      }
 
-    return passage;
-  }
-
-  /**
-   * Clear the response cache.
-   */
-  clearCache(): void {
-    this.cache.clear();
+      return passage;
+    });
   }
 }

@@ -55,8 +55,6 @@ async function main() {
       console.log(`  - Has Subheading: ${verse.hasSubheading}`);
     }
 
-    // Clean up cache when done
-    client.clearCache();
     console.log("\n✅ Done!");
   } catch (error) {
     if (error instanceof Error) {

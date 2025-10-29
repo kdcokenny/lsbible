@@ -1,0 +1,7 @@
+[install]
+# Optimize for Cloudflare Workers
+production = true
+
+[install.scopes]
+# Use workspace protocol for local packages
+"@lsbible" = "workspace:*"

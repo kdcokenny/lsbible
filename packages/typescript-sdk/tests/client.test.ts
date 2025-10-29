@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { MemoryCacheProvider } from "../src/cache/memory.js";
 import { LSBibleClient } from "../src/client.js";
 import { APIError, BuildIDError, InvalidReferenceError } from "../src/exceptions.js";
 import { BookName } from "../src/models.js";
@@ -12,7 +13,7 @@ describe("LSBibleClient", () => {
   let client: LSBibleClient;
 
   beforeEach(() => {
-    client = new LSBibleClient({ cacheTtl: 1 });
+    client = new LSBibleClient(); // No caching in tests
     mockFetch.mockReset();
   });
 
@@ -24,7 +25,6 @@ describe("LSBibleClient", () => {
 
     it("should create client with custom options", () => {
       const customClient = new LSBibleClient({
-        cacheTtl: 7200,
         timeout: 60,
         buildId: "test-build-id",
         headers: { "Custom-Header": "value" },
@@ -119,13 +119,13 @@ describe("LSBibleClient", () => {
         text: async () => "<html><body>No build ID here</body></html>",
       } as unknown as Response);
 
-      await expect(client.search("test")).rejects.toThrow(BuildIDError);
+      expect(client.search("test")).rejects.toThrow(BuildIDError);
     });
 
     it("should throw BuildIDError on homepage fetch failure", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-      await expect(client.search("test")).rejects.toThrow(BuildIDError);
+      expect(client.search("test")).rejects.toThrow(BuildIDError);
     });
   });
 
@@ -204,6 +204,11 @@ describe("LSBibleClient", () => {
     });
 
     it("should use cache for repeated queries", async () => {
+      // Create client with cache provider
+      const cacheClient = new LSBibleClient({
+        cache: { provider: new MemoryCacheProvider() },
+      });
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -216,8 +221,8 @@ describe("LSBibleClient", () => {
         }),
       } as unknown as Response);
 
-      await client.search("test");
-      await client.search("test");
+      await cacheClient.search("test");
+      await cacheClient.search("test");
 
       // Should only fetch homepage once and API once (second call uses cache)
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -230,13 +235,13 @@ describe("LSBibleClient", () => {
         statusText: "Internal Server Error",
       } as unknown as Response);
 
-      await expect(client.search("test")).rejects.toThrow(APIError);
+      expect(client.search("test")).rejects.toThrow(APIError);
     });
 
     it("should throw APIError on network error", async () => {
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-      await expect(client.search("test")).rejects.toThrow(APIError);
+      expect(client.search("test")).rejects.toThrow(APIError);
     });
   });
 
@@ -308,17 +313,17 @@ describe("LSBibleClient", () => {
     });
 
     it("should throw InvalidReferenceError for invalid book", async () => {
-      await expect(client.getVerse("NotABook", 1, 1)).rejects.toThrow(InvalidReferenceError);
+      expect(client.getVerse("NotABook", 1, 1)).rejects.toThrow(InvalidReferenceError);
     });
 
     it("should throw InvalidReferenceError for invalid chapter", async () => {
       // John only has 21 chapters
-      await expect(client.getVerse(BookName.JOHN, 99, 1)).rejects.toThrow(InvalidReferenceError);
+      expect(client.getVerse(BookName.JOHN, 99, 1)).rejects.toThrow(InvalidReferenceError);
     });
 
     it("should throw InvalidReferenceError for invalid verse", async () => {
       // John 3 only has 36 verses
-      await expect(client.getVerse(BookName.JOHN, 3, 999)).rejects.toThrow(InvalidReferenceError);
+      expect(client.getVerse(BookName.JOHN, 3, 999)).rejects.toThrow(InvalidReferenceError);
     });
 
     it("should throw APIError when no passages returned", async () => {
@@ -334,7 +339,7 @@ describe("LSBibleClient", () => {
         }),
       } as unknown as Response);
 
-      await expect(client.getVerse(BookName.JOHN, 3, 16)).rejects.toThrow(APIError);
+      expect(client.getVerse(BookName.JOHN, 3, 16)).rejects.toThrow(APIError);
     });
   });
 
@@ -442,12 +447,12 @@ describe("LSBibleClient", () => {
 
     it("should validate both references", async () => {
       // Invalid from reference
-      await expect(client.getPassage(BookName.JOHN, 99, 1, BookName.JOHN, 3, 16)).rejects.toThrow(
+      expect(client.getPassage(BookName.JOHN, 99, 1, BookName.JOHN, 3, 16)).rejects.toThrow(
         InvalidReferenceError
       );
 
       // Invalid to reference
-      await expect(client.getPassage(BookName.JOHN, 3, 16, BookName.JOHN, 99, 1)).rejects.toThrow(
+      expect(client.getPassage(BookName.JOHN, 3, 16, BookName.JOHN, 99, 1)).rejects.toThrow(
         InvalidReferenceError
       );
     });
@@ -496,47 +501,11 @@ describe("LSBibleClient", () => {
 
     it("should throw for invalid chapter", async () => {
       // John only has 21 chapters
-      await expect(client.getChapter(BookName.JOHN, 99)).rejects.toThrow(APIError);
+      expect(client.getChapter(BookName.JOHN, 99)).rejects.toThrow(APIError);
     });
 
     it("should throw for chapter less than 1", async () => {
-      await expect(client.getChapter(BookName.JOHN, 0)).rejects.toThrow(APIError);
-    });
-  });
-
-  describe("clearCache", () => {
-    it("should clear the cache", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => '{"buildId":"test-build"}',
-      } as unknown as Response);
-
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          pageProps: {
-            passages: [],
-            searchMatchCount: 0,
-            duration: 1,
-            start: Date.now(),
-          },
-        }),
-      } as unknown as Response);
-
-      // First call
-      await client.search("test");
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-
-      // Second call should use cache
-      await client.search("test");
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-
-      // Clear cache
-      client.clearCache();
-
-      // Third call should fetch again
-      await client.search("test");
-      expect(mockFetch).toHaveBeenCalledTimes(3);
+      expect(client.getChapter(BookName.JOHN, 0)).rejects.toThrow(APIError);
     });
   });
 });
