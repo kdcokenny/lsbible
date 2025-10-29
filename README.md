@@ -36,11 +36,37 @@ The LSB's literal approach makes it ideal for serious Bible study, and its struc
 
 ## What Can You Do With LSBible?
 
-LSBible provides **two powerful ways** to access the Legacy Standard Bible:
+LSBible provides **three powerful ways** to access the Legacy Standard Bible:
 
-### 📚 As a Python SDK (for developers)
+### 🤖 As an MCP Server (for AI applications)
 
-Perfect for building Bible applications, study tools, or integrating Scripture into your projects:
+Integrate Bible content directly into Claude Desktop, Claude Code, Cursor, or any MCP-compatible LLM application:
+
+- ✅ **Natural language queries** - Ask Claude to "get John 3:16" or "search for verses about love"
+- ✅ **Zero setup coding** - Just add to your MCP config, no programming required
+- ✅ **20+ supported clients** - Works with Cursor, VS Code, Claude Desktop, Windsurf, and more
+- ✅ **Bible study tools** - Generate study guides and cross-reference analyses with built-in prompts
+- ✅ **Search distribution** - Understand which parts of the Bible discuss specific topics
+- ✅ **Bible structure info** - Query metadata about all 66 books, chapters, and verses
+
+**[View MCP Server Installation Guide →](./packages/typescript-sdk/mcp/README.md)**
+
+### 📦 As a TypeScript SDK (for developers)
+
+Perfect for building modern Bible applications with full type safety:
+
+- ✅ **100% Type-Safe** - Full TypeScript support with Zod validation
+- ✅ **Structured Parameters** - No string parsing! Use `client.getVerse(BookName.JOHN, 3, 16)`
+- ✅ **Rich formatting preserved** - Access red-letter text (Jesus' words), italics, small-caps, and more
+- ✅ **MCP Server included** - Built-in Model Context Protocol server for AI integration
+- ✅ **IDE autocomplete** - Enum-based book names for all 66 books (no typos!)
+- ✅ **Modern runtime support** - Works with Node.js 18+, Bun, and Deno
+
+**[View TypeScript SDK Documentation →](./packages/typescript-sdk/README.md)**
+
+### 🐍 As a Python SDK (for developers)
+
+Perfect for building Bible applications, study tools, or integrating Scripture into Python projects:
 
 - ✅ **Fetch verses with type safety** - Get any Bible verse with full validation of book/chapter/verse
 - ✅ **Search with analytics** - Find verses by text and see distribution across Bible sections and books
@@ -51,21 +77,52 @@ Perfect for building Bible applications, study tools, or integrating Scripture i
 
 **[View Python SDK Documentation →](./packages/python-sdk/README.md)**
 
-### 🤖 As an MCP Server (for AI applications)
-
-Integrate Bible content directly into Claude Desktop, Claude Code, or any MCP-compatible LLM application:
-
-- ✅ **Natural language queries** - Ask Claude to "get John 3:16" or "search for verses about love"
-- ✅ **Bible study tools** - Generate study guides and cross-reference analyses with built-in prompts
-- ✅ **Search distribution** - Understand which parts of the Bible discuss specific topics
-- ✅ **Bible structure info** - Query metadata about all 66 books, chapters, and verses
-- ✅ **Seamless integration** - Works with Claude Desktop/Code via Model Context Protocol
-
-**[View MCP Server Installation Guide →](./packages/typescript-sdk/mcp/README.md)**
-
 ## Quick Start
 
 ### Choose Your Path
+
+#### 🤖 MCP Server Integration
+
+The easiest way to get started - no coding required! Just add LSBible to your MCP client config.
+
+**[📚 Complete Installation Guide →](./packages/typescript-sdk/mcp/README.md)**
+
+Supports 20+ MCP clients including Cursor, Claude Code, VS Code, Claude Desktop, Windsurf, and more. Both local (npx) and remote (https://lsbible.kdco.dev/mcp) options available.
+
+#### 📦 TypeScript SDK Usage
+
+Install and use programmatically with full type safety:
+
+```bash
+# Install SDK
+npm install lsbible
+```
+
+```typescript
+import { LSBibleClient, BookName } from "lsbible";
+
+const client = new LSBibleClient();
+
+// Fetch a verse with type-safe parameters
+const verse = await client.getVerse(BookName.JOHN, 3, 16);
+console.log(verse.verses[0].plainText);
+// Output: "For God so loved the world, that He gave His only Son..."
+
+// Access rich formatting
+for (const segment of verse.verses[0].segments) {
+  if (segment.isRedLetter) {
+    console.log(`Jesus said: "${segment.text}"`);
+  }
+}
+
+// Search with distribution analytics
+const results = await client.search("love");
+console.log(`Found ${results.matchCount} matches across the Bible`);
+
+// Get an entire chapter
+const chapter = await client.getChapter(BookName.PSALMS, 23);
+console.log(`Psalm 23 has ${chapter.verseCount} verses`);
+```
 
 #### 🐍 Python SDK Usage
 
@@ -98,126 +155,6 @@ with LSBibleClient() as client:
     if results.has_search_metadata:
         for section, count in results.counts_by_section.items():
             print(f"{section}: {count} matches")
-```
-
-#### 🤖 MCP Server Integration
-
-**Quick Install** (local and remote options available):
-
-<details>
-<summary><b>Install in Cursor</b></summary>
-
-**Local (STDIO):**
-```json
-{
-  "mcpServers": {
-    "lsbible": {
-      "command": "npx",
-      "args": ["-y", "lsbible-mcp"]
-    }
-  }
-}
-```
-
-**Remote (HTTP):**
-```json
-{
-  "mcpServers": {
-    "lsbible": {
-      "url": "https://lsbible.kdco.dev/mcp"
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Install in Claude Desktop</b></summary>
-
-**Local (STDIO):**
-```json
-{
-  "mcpServers": {
-    "lsbible": {
-      "command": "npx",
-      "args": ["-y", "lsbible-mcp"]
-    }
-  }
-}
-```
-
-**Remote (HTTP):**
-Open Claude Desktop → Settings → Connectors → Add Custom Connector
-- Name: `lsbible`
-- URL: `https://lsbible.kdco.dev/mcp`
-
-</details>
-
-<details>
-<summary><b>Install in Claude Code</b></summary>
-
-**Local (STDIO):**
-```bash
-claude mcp add lsbible -- npx -y lsbible-mcp
-```
-
-**Remote (HTTP):**
-```bash
-claude mcp add --transport http lsbible https://lsbible.kdco.dev/mcp
-```
-
-</details>
-
-<details>
-<summary><b>Install in VS Code</b></summary>
-
-**Local (STDIO):**
-```json
-{
-  "mcp": {
-    "servers": {
-      "lsbible": {
-        "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "lsbible-mcp"]
-      }
-    }
-  }
-}
-```
-
-**Remote (HTTP):**
-```json
-{
-  "mcp": {
-    "servers": {
-      "lsbible": {
-        "type": "http",
-        "url": "https://lsbible.kdco.dev/mcp"
-      }
-    }
-  }
-}
-```
-
-</details>
-
-**📚 More Installation Options:**
-
-For Windsurf, Cline, Zed, JetBrains, and 20+ other MCP clients, see the **[Complete Installation Guide →](./packages/typescript-sdk/mcp/README.md)**
-
-**Then ask Claude naturally:**
-
-```
-You: "Get John 3:16"
-Claude: [Uses get_verse tool to fetch the verse with formatting]
-
-You: "Search for verses about love and show me which books have the most"
-Claude: [Uses search_bible tool and shows distribution metadata]
-
-You: "Help me study Romans 8:28-39"
-Claude: [Uses bible_study prompt to generate study guide]
 ```
 
 ## Key Features
@@ -280,23 +217,6 @@ Example: Searching for "love" shows 436 total matches, with 101 in Pauline Epist
 
 ## Available SDKs
 
-### ✅ Python SDK (Stable)
-
-**Status:** Production ready
-**Version:** 0.2.0
-**Python:** 3.12+
-
-```bash
-uv pip install lsbible
-```
-
-**Key Stats:**
-- 🏛️ 10 core modules
-- ✅ Comprehensive test suite with >80% coverage
-- 📦 Built with Pydantic v2, httpx, BeautifulSoup
-
-**[Full Python SDK Documentation →](./packages/python-sdk/README.md)**
-
 ### ✅ TypeScript SDK (Stable)
 
 **Status:** Production ready
@@ -316,27 +236,45 @@ npm install lsbible
 **[Full TypeScript SDK Documentation →](./packages/typescript-sdk/README.md)**
 **[MCP Server Installation Guide →](./packages/typescript-sdk/mcp/README.md)**
 
-### 🚧 Future SDKs
+### ✅ Python SDK (Stable)
 
-We're planning SDKs in additional languages following the same design philosophy:
+**Status:** Production ready
+**Version:** 0.2.0
+**Python:** 3.12+
 
-- **Rust SDK** - Planned
-- **Go SDK** - Planned
+```bash
+uv pip install lsbible
+```
 
-All SDKs will share:
+**Key Stats:**
+- 🏛️ 10 core modules
+- ✅ Comprehensive test suite with >80% coverage
+- 📦 Built with Pydantic v2, httpx, BeautifulSoup
+
+**[Full Python SDK Documentation →](./packages/python-sdk/README.md)**
+
+### 💡 Want Another Language?
+
+We follow a **community-driven approach** for additional language SDKs. If you'd like to see LSBible in another language (Rust, Go, Java, C#, etc.):
+
+1. **Check existing issues** - Someone may have already requested it
+2. **Open a feature request** - Tell us which language and why
+3. **Contribute!** - Follow our [SDK Specification](./.specs/SPEC.md) to build one
+
+All SDKs should follow these principles:
 - Structured parameter design (no string parsing)
 - Full type safety in the target language
 - Complete Bible validation
 - Rich formatting support
 
-**Want to help?** See [Contributing Guidelines](./CONTRIBUTING.md) for SDK development guide.
+**[Open an Issue →](https://github.com/kdcokenny/lsbible/issues)** | **[Read Contributing Guidelines →](./CONTRIBUTING.md)**
 
 ## Documentation
 
 ### 📚 Core Documentation
-- **[Python SDK Guide](./packages/python-sdk/README.md)** - Complete Python SDK usage guide
-- **[TypeScript SDK Guide](./packages/typescript-sdk/README.md)** - Complete TypeScript SDK usage guide
 - **[MCP Server Installation](./packages/typescript-sdk/mcp/README.md)** - Install for 20+ MCP clients (Cursor, VS Code, Claude Code, etc.)
+- **[TypeScript SDK Guide](./packages/typescript-sdk/README.md)** - Complete TypeScript SDK usage guide
+- **[Python SDK Guide](./packages/python-sdk/README.md)** - Complete Python SDK usage guide
 - **[API Models Reference](./packages/python-sdk/README.md#models)** - Pydantic model documentation
 - **[SDK Specification](./.specs/SPEC.md)** - Full technical specification
 
@@ -364,21 +302,7 @@ lsbible/
 │   └── python-sdk-mcp-server.md  # MCP server specification
 │
 └── packages/
-    ├── python-sdk/            # ✅ Python SDK (stable)
-    │   ├── lsbible/           # SDK source code
-    │   │   ├── client.py      # API client
-    │   │   ├── models.py      # Pydantic data models
-    │   │   ├── parser.py      # HTML parser
-    │   │   ├── validators.py  # Reference validation
-    │   │   ├── books.py       # Bible structure data
-    │   │   ├── cache.py       # Response caching
-    │   │   └── exceptions.py  # Custom exceptions
-    │   ├── tests/             # Test suite
-    │   ├── examples/          # Usage examples
-    │   ├── README.md          # Python SDK docs
-    │   └── pyproject.toml     # Python project config
-    │
-    ├── typescript-sdk/        # ✅ TypeScript SDK (stable)
+    ├── typescript-sdk/        # ✅ TypeScript SDK (stable) + MCP Server
     │   ├── src/               # SDK source code
     │   │   ├── client.ts      # API client
     │   │   ├── models.ts      # Zod schemas
@@ -397,8 +321,19 @@ lsbible/
     │   ├── README.md          # TypeScript SDK docs
     │   └── package.json       # Package configuration
     │
-    ├── rust-sdk/              # 🚧 Future: Rust SDK
-    └── go-sdk/                # 🚧 Future: Go SDK
+    └── python-sdk/            # ✅ Python SDK (stable)
+        ├── lsbible/           # SDK source code
+        │   ├── client.py      # API client
+        │   ├── models.py      # Pydantic data models
+        │   ├── parser.py      # HTML parser
+        │   ├── validators.py  # Reference validation
+        │   ├── books.py       # Bible structure data
+        │   ├── cache.py       # Response caching
+        │   └── exceptions.py  # Custom exceptions
+        ├── tests/             # Test suite
+        ├── examples/          # Usage examples
+        ├── README.md          # Python SDK docs
+        └── pyproject.toml     # Python project config
 ```
 
 ## Development
@@ -440,22 +375,6 @@ bun run --filter python-sdk test
 bun run --filter python-sdk lint
 ```
 
-### Python SDK Development
-
-```bash
-cd packages/python-sdk
-
-# Run tests with coverage
-uv run pytest
-
-# Type checking (ty - Rust-based type checker)
-uv run ty check lsbible
-
-# Linting and formatting
-uv run ruff check lsbible
-uv run ruff format lsbible
-```
-
 ### TypeScript SDK Development
 
 ```bash
@@ -481,6 +400,22 @@ bun run lint:fix
 bun run dist/mcp/stdio.js
 # Or use the built binary
 npx lsbible-mcp
+```
+
+### Python SDK Development
+
+```bash
+cd packages/python-sdk
+
+# Run tests with coverage
+uv run pytest
+
+# Type checking (ty - Rust-based type checker)
+uv run ty check lsbible
+
+# Linting and formatting
+uv run ruff check lsbible
+uv run ruff format lsbible
 ```
 
 ## Contributing
@@ -522,7 +457,7 @@ This project is independently developed and is not affiliated with the creators 
 
 <div align="center">
 
-**[Get Started with Python SDK →](./packages/python-sdk/README.md)**
+**[Install MCP Server →](./packages/typescript-sdk/mcp/README.md)** | **[TypeScript SDK →](./packages/typescript-sdk/README.md)** | **[Python SDK →](./packages/python-sdk/README.md)**
 
 Made with ❤️ for Bible software developers
 
