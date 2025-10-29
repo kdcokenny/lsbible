@@ -8,8 +8,8 @@
   ],
   "routes": [
     {
-      "pattern": "lsbible.kdco.dev/mcp",
-      "zone_name": "kdco.dev"
+      "pattern": "lsbible.kdco.dev",
+      "custom_domain": true
     }
   ],
   "migrations": [
