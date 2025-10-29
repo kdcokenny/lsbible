@@ -2,8 +2,15 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
+      "dependsOn": ["^build"]
+    },
+    "@lsbible/mcp-server#build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": []
+    },
+    "lsbible#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "test": {
       "dependsOn": ["build"],
