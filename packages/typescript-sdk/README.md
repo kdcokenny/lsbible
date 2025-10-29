@@ -98,13 +98,21 @@ client.getVerse("John 3:16"); // NOT SUPPORTED
 ### LSBibleClient
 
 ```typescript
-import { LSBibleClient } from "lsbible";
+import { LSBibleClient, MemoryCacheProvider } from "lsbible";
 
 const client = new LSBibleClient({
-  cacheTtl: 3600,    // Cache TTL in seconds (default: 3600)
-  timeout: 30,       // Request timeout in seconds (default: 30)
+  cache: {
+    provider: new MemoryCacheProvider(), // Optional cache provider
+    ttl: {
+      verse: 2592000,   // 30 days (default)
+      passage: 2592000, // 30 days (default)
+      chapter: 2592000, // 30 days (default)
+      search: 604800,   // 7 days (default)
+    }
+  },
+  timeout: 30,        // Request timeout in seconds (default: 30)
   buildId: undefined, // Optional build ID (auto-detected if not provided)
-  headers: {},       // Optional custom headers
+  headers: {},        // Optional custom headers
 });
 ```
 
@@ -194,11 +202,74 @@ for (const passage of results.passages) {
 
 #### `clearCache()`
 
-Clear the response cache.
+Clear the response cache (only available with `MemoryCacheProvider`).
 
 ```typescript
 client.clearCache();
 ```
+
+## Caching
+
+The SDK supports pluggable caching through the `CacheProvider` interface, allowing you to choose the right caching strategy for your deployment environment.
+
+### Built-in Cache Providers
+
+**MemoryCacheProvider** - In-memory caching with TTL support
+- ✅ Local development, testing, single-process apps
+- ❌ Multi-process apps, Cloudflare Workers, high-traffic production
+
+**NoopCacheProvider** - Disables caching entirely
+- Useful for debugging or when caching isn't beneficial
+
+**CloudflareCacheProvider** - Edge caching for Cloudflare Workers
+- Available in the [MCP Server implementation](../../apps/mcp-server/src/cache/cloudflare.ts)
+
+### Cache Configuration
+
+```typescript
+import { LSBibleClient, MemoryCacheProvider, CacheTTL } from "lsbible";
+
+const client = new LSBibleClient({
+  cache: {
+    provider: new MemoryCacheProvider(),
+    ttl: {
+      verse: CacheTTL.BIBLE_CONTENT,   // 30 days
+      passage: CacheTTL.BIBLE_CONTENT, // 30 days
+      chapter: CacheTTL.BIBLE_CONTENT, // 30 days
+      search: CacheTTL.SEARCH_RESULTS, // 7 days
+    }
+  }
+});
+```
+
+**Recommended TTL constants:**
+- `CacheTTL.BIBLE_CONTENT` (30 days) - Bible text is immutable
+- `CacheTTL.SEARCH_RESULTS` (7 days) - May change with API updates
+- `CacheTTL.STATIC` (1 year) - Never changes
+
+### Custom Cache Providers
+
+Implement the `CacheProvider` interface for custom backends like Redis, Memcached, or DynamoDB:
+
+```typescript
+interface CacheProvider {
+  get<T>(key: string): Promise<T | undefined>;
+  set<T>(key: string, value: T, ttl: number): Promise<void>;
+}
+```
+
+**Complete examples:**
+- [Memory Cache](./examples/cache-memory.ts) - Demonstrates cache hits/misses and manual clearing
+- [Redis Cache](./examples/cache-redis.ts) - Full Redis implementation with ioredis
+- [Custom Cache](./examples/cache-custom.ts) - Template for building your own cache provider
+
+### Cache Keys
+
+The SDK uses these cache key patterns:
+- `verse:{book} {chapter}:{verse}` - Single verses
+- `passage:{normalized query}` - Passage ranges
+- `chapter:{book} {chapter}` - Full chapters
+- `search:{query}` - Text searches
 
 ## Type System
 

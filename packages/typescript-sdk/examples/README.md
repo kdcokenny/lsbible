@@ -25,7 +25,9 @@ node examples/quick-start.ts
 
 ## Available Examples
 
-### 1. `john-3-16.ts` - Single Verse Example
+### Basic Usage
+
+#### 1. `john-3-16.ts` - Single Verse Example
 
 Demonstrates fetching a single verse (John 3:16) and displays:
 - Verse reference information
@@ -52,7 +54,7 @@ Metadata:
   ...
 ```
 
-### 2. `quick-start.ts` - Comprehensive Examples
+#### 2. `quick-start.ts` - Comprehensive Examples
 
 Demonstrates all major SDK features:
 1. **Get a single verse** - Fetch John 3:16
@@ -73,6 +75,77 @@ Demonstrates all major SDK features:
    Got 3 verses
    Range: John 3:16 - John 3:18
 ...
+```
+
+### Caching
+
+#### 3. `cache-memory.ts` - In-Memory Caching
+
+Demonstrates using the built-in `MemoryCacheProvider`:
+- Configuring cache with custom TTL values
+- Observing cache hits vs cache misses
+- Performance improvements from caching
+- Manually clearing the cache
+
+**Run with:**
+```bash
+bun run examples/cache-memory.ts
+```
+
+**Output:**
+```
+=== LSBible SDK - Memory Cache Example ===
+
+1️⃣  First request (cache miss)...
+   John 3:16: "For God so loved the world, that He gave His...
+   ⏱️  Duration: 245ms
+   📦 Cache size: 1 entries
+
+2️⃣  Second request (cache hit)...
+   John 3:16: "For God so loved the world, that He gave His...
+   ⏱️  Duration: 2ms (243ms faster! ⚡)
+   📦 Cache size: 1 entries
+...
+```
+
+#### 4. `cache-redis.ts` - Redis Cache Provider
+
+Full implementation of a custom Redis cache provider:
+- Implementing the `CacheProvider` interface
+- Using ioredis for Redis connections
+- Error handling in cache operations
+- Checking cache TTL in Redis
+
+**Prerequisites:**
+- Install ioredis: `npm install ioredis` or `bun add ioredis`
+- Redis server running locally or remote connection
+
+**Run with:**
+```bash
+# Start Redis (if needed)
+docker run -d -p 6379:6379 redis:alpine
+
+# Run example
+bun run examples/cache-redis.ts
+```
+
+#### 5. `cache-custom.ts` - Custom Cache Provider Template
+
+Educational example showing how to implement a custom cache provider:
+- Complete `CacheProvider` interface implementation
+- File-based cache as demonstration
+- Best practices for error handling
+- TTL management and expiration
+
+Use this as a template for implementing:
+- DynamoDB cache
+- Memcached
+- SQLite cache
+- Or any other storage backend
+
+**Run with:**
+```bash
+bun run examples/cache-custom.ts
 ```
 
 ## Key Features Demonstrated
