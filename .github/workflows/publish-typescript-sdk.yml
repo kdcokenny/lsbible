@@ -1,0 +1,49 @@
+name: Publish TypeScript SDK to npm
+
+on:
+  push:
+    tags:
+      # Publish on tags for typescript-sdk package, e.g., typescript-sdk/v0.1.0
+      - typescript-sdk/v*
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # Required for npm OIDC trusted publishing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        working-directory: packages/typescript-sdk
+        run: bun run type-check
+
+      - name: Run tests
+        working-directory: packages/typescript-sdk
+        run: bun test
+
+      - name: Build package
+        working-directory: packages/typescript-sdk
+        run: bun run build
+
+      - name: Pack package with Bun
+        working-directory: packages/typescript-sdk
+        run: bun pm pack
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish to npm
+        working-directory: packages/typescript-sdk
+        run: npm publish *.tgz --provenance --access public
