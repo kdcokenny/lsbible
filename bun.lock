@@ -11,15 +11,15 @@
       "name": "@lsbible/mcp-server",
       "version": "0.1.0",
       "dependencies": {
-        "@modelcontextprotocol/sdk": "latest",
-        "agents": "latest",
-        "lsbible": "workspace:*",
+        "@modelcontextprotocol/sdk": "^1.20.2",
+        "agents": "^0.2.19",
+        "lsbible": "^0.1.0",
       },
       "devDependencies": {
-        "@biomejs/biome": "latest",
-        "@types/node": "latest",
-        "typescript": "latest",
-        "wrangler": "latest",
+        "@biomejs/biome": "2.3.2",
+        "@types/node": "^24.9.2",
+        "typescript": "^5.9.3",
+        "wrangler": "^4.45.1",
       },
     },
     "packages/typescript-sdk": {
