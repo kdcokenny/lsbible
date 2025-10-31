@@ -21,12 +21,12 @@ async function main() {
     cache: {
       provider: cacheProvider,
       ttl: {
-        verse: CacheTTL.BIBLE_CONTENT,   // 30 days
+        verse: CacheTTL.BIBLE_CONTENT, // 30 days
         passage: CacheTTL.BIBLE_CONTENT, // 30 days
         chapter: CacheTTL.BIBLE_CONTENT, // 30 days
         search: CacheTTL.SEARCH_RESULTS, // 7 days
-      }
-    }
+      },
+    },
   });
 
   try {

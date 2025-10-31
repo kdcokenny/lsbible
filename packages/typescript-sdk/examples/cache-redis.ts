@@ -18,9 +18,9 @@
  *   brew install redis && brew services start redis
  */
 
+import Redis from "ioredis";
 import type { CacheProvider } from "../src/index.js";
 import { BookName, LSBibleClient } from "../src/index.js";
-import Redis from "ioredis";
 
 /**
  * Redis cache provider implementation.
@@ -80,7 +80,7 @@ async function main() {
   const client = new LSBibleClient({
     cache: {
       provider: cacheProvider,
-    }
+    },
   });
 
   try {

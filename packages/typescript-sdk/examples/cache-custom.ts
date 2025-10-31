@@ -29,7 +29,7 @@ import { BookName, LSBibleClient } from "../src/index.js";
 class FileCacheProvider implements CacheProvider {
   private cacheDir: string;
 
-  constructor(cacheDir: string = ".cache") {
+  constructor(cacheDir = ".cache") {
     this.cacheDir = cacheDir;
   }
 
@@ -114,9 +114,7 @@ class FileCacheProvider implements CacheProvider {
     try {
       const files = await fs.readdir(this.cacheDir);
       await Promise.all(
-        files.map(file =>
-          fs.unlink(path.join(this.cacheDir, file)).catch(() => {})
-        )
+        files.map((file) => fs.unlink(path.join(this.cacheDir, file)).catch(() => {}))
       );
     } catch (error) {
       console.error("Failed to clear cache:", error);
@@ -137,12 +135,12 @@ async function main() {
       cache: {
         provider: cacheProvider,
         ttl: {
-          verse: 3600,    // 1 hour for demonstration
+          verse: 3600, // 1 hour for demonstration
           passage: 3600,
           chapter: 3600,
-          search: 1800,   // 30 minutes
-        }
-      }
+          search: 1800, // 30 minutes
+        },
+      },
     });
 
     console.log("1️⃣  Fetching John 3:16 (will be cached to .cache/ directory)...");

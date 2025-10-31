@@ -560,4 +560,26 @@ export class LSBibleClient {
       return passage;
     });
   }
+
+  /**
+   * Clear all cached data.
+   *
+   * This method calls the cache provider's clear method if one is configured.
+   * If the cache provider doesn't implement a clear method, this is a no-op.
+   *
+   * @example
+   * ```ts
+   * const client = new LSBibleClient({
+   *   cache: { provider: new MemoryCacheProvider() }
+   * });
+   *
+   * // Clear all cached data
+   * client.clearCache();
+   * ```
+   */
+  clearCache(): void {
+    if (this.cacheProvider && "clear" in this.cacheProvider) {
+      (this.cacheProvider as { clear(): void }).clear();
+    }
+  }
 }
