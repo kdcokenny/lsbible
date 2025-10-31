@@ -3,10 +3,11 @@
 import platform
 import re
 import sys
+from typing import Any
 
 import httpx
 
-from .cache import ResponseCache
+from .cache import CacheOptions, CacheProvider, CacheTTL
 from .exceptions import APIError, BuildIDError
 from .models import BookName, Passage, SearchResponse, VerseReference
 from .parser import PassageParser
@@ -41,20 +42,36 @@ def _get_user_agent() -> str:
 
 class LSBibleClient:
     """
-    Client for interacting with the LSBible API.
+    Async client for interacting with the LSBible API.
 
     Args:
-        cache_ttl: Cache time-to-live in seconds (default: 3600)
+        cache: Cache configuration options (optional)
         timeout: Request timeout in seconds (default: 30)
         build_id: Optional build ID (auto-detected if not provided)
         headers: Optional custom headers (merged with defaults)
+
+    Example:
+        ```python
+        from lsbible import LSBibleClient, MemoryCacheProvider, CacheTTL
+
+        async with LSBibleClient(
+            cache={
+                "provider": MemoryCacheProvider(),
+                "ttl": {
+                    "verse": CacheTTL.BIBLE_CONTENT,
+                    "search": CacheTTL.SEARCH_RESULTS,
+                }
+            }
+        ) as client:
+            verse = await client.get_verse("John", 3, 16)
+        ```
     """
 
     BASE_URL = "https://read.lsbible.org"
 
     def __init__(
         self,
-        cache_ttl: int = 3600,
+        cache: CacheOptions | None = None,
         timeout: int = 30,
         build_id: str | None = None,
         headers: dict[str, str] | None = None,
@@ -69,12 +86,58 @@ class LSBibleClient:
         if headers:
             default_headers.update(headers)
 
-        self._client = httpx.Client(timeout=timeout, headers=default_headers)
-        self._cache = ResponseCache(ttl=cache_ttl)
+        self._client = httpx.AsyncClient(timeout=timeout, headers=default_headers)
+
+        # Setup cache
+        self._cache_provider: CacheProvider | None = cache.get("provider") if cache else None
+        self._cache_ttls = {
+            "verse": cache.get("ttl", {}).get("verse", CacheTTL.BIBLE_CONTENT)
+            if cache
+            else CacheTTL.BIBLE_CONTENT,
+            "passage": cache.get("ttl", {}).get("passage", CacheTTL.BIBLE_CONTENT)
+            if cache
+            else CacheTTL.BIBLE_CONTENT,
+            "chapter": cache.get("ttl", {}).get("chapter", CacheTTL.BIBLE_CONTENT)
+            if cache
+            else CacheTTL.BIBLE_CONTENT,
+            "search": cache.get("ttl", {}).get("search", CacheTTL.SEARCH_RESULTS)
+            if cache
+            else CacheTTL.SEARCH_RESULTS,
+        }
+
         self._build_id = build_id
         self._build_id_fetched = build_id is not None
 
-    def _get_build_id(self) -> str:
+    async def _with_cache(self, key: str, ttl: int, fetcher: Any) -> dict:
+        """
+        Cache wrapper helper method.
+
+        Args:
+            key: Cache key
+            ttl: Time to live in seconds
+            fetcher: Async function to call on cache miss
+
+        Returns:
+            Cached or freshly fetched data
+        """
+        # If no cache provider, skip caching
+        if not self._cache_provider:
+            return await fetcher()
+
+        # Try to get from cache
+        cached = await self._cache_provider.get(key)
+        if cached is not None:
+            return cached
+
+        # Fetch fresh data
+        data = await fetcher()
+
+        # Store in cache
+        await self._cache_provider.set(key, data, ttl)
+
+        return data
+
+    async def _get_build_id(self) -> str:
         """
         Get the Next.js build ID.
 
@@ -94,7 +157,7 @@ class LSBibleClient:
 
         # Try to extract from homepage
         try:
-            response = self._client.get(self.BASE_URL)
+            response = await self._client.get(self.BASE_URL)
             response.raise_for_status()
 
             # Look for __NEXT_DATA__ script tag
@@ -116,9 +179,9 @@ class LSBibleClient:
 
         raise BuildIDError("Could not determine build ID from homepage")
 
-    def _make_request(self, query: str) -> dict:
+    async def _fetch_data(self, query: str) -> dict:
         """
-        Make a request to the LSBible API.
+        Fetch data from the LSBible API (no caching).
 
         Args:
             query: Search query or verse reference
@@ -129,21 +192,15 @@ class LSBibleClient:
         Raises:
             APIError: If request fails
         """
-        # Check cache first
-        cache_key = f"query:{query}"
-        cached = self._cache.get(cache_key)
-        if cached is not None:
-            return cached
-
         # Get build ID
-        build_id = self._get_build_id()
+        build_id = await self._get_build_id()
 
         # Construct URL
         url = f"{self.BASE_URL}/_next/data/{build_id}/index.json"
 
         # Make request
         try:
-            response = self._client.get(
+            response = await self._client.get(
                 url,
                 params={"q": query},
                 headers={
@@ -152,12 +209,7 @@ class LSBibleClient:
                 },
             )
             response.raise_for_status()
-            data = response.json()
-
-            # Cache the response
-            self._cache.set(cache_key, data)
-
-            return data
+            return response.json()
 
         except httpx.HTTPStatusError as e:
             raise APIError(f"API request failed with status {e.response.status_code}: {e}") from e
@@ -330,7 +382,7 @@ class LSBibleClient:
         else:
             return self._parse_reference_results(page_props, query)
 
-    def search(self, query: str) -> SearchResponse:
+    async def search(self, query: str) -> SearchResponse:
         """
         Search for passages containing text.
 
@@ -343,10 +395,14 @@ class LSBibleClient:
         Raises:
             APIError: If API request fails
         """
-        data = self._make_request(query)
+        # Use cache with search-specific TTL and cache key
+        cache_key = f"search:{query}"
+        data = await self._with_cache(
+            cache_key, self._cache_ttls["search"], lambda: self._fetch_data(query)
+        )
         return self._parse_response(data, query)
 
-    def get_verse(self, book: BookName | str, chapter: int, verse: int) -> Passage:
+    async def get_verse(self, book: BookName | str, chapter: int, verse: int) -> Passage:
         """
         Get a specific verse with validated parameters.
 
@@ -364,20 +420,25 @@ class LSBibleClient:
 
         Example:
             # Using enum (recommended - type-safe with autocomplete)
-            passage = client.get_verse(BookName.JOHN, 3, 16)
+            passage = await client.get_verse(BookName.JOHN, 3, 16)
 
             # Using string (validated at runtime)
-            passage = client.get_verse("John", 3, 16)
+            passage = await client.get_verse("John", 3, 16)
         """
         # Validate reference
         ReferenceValidator.validate_reference(book, chapter, verse)
 
-        # Construct query
+        # Construct query and cache key
         book_name = BookValidator.normalize_book_name(book)
         query = f"{book_name} {chapter}:{verse}"
+        cache_key = f"verse:{book_name} {chapter}:{verse}"
 
-        # Make request
-        response = self.search(query)
+        # Fetch with caching
+        data = await self._with_cache(
+            cache_key, self._cache_ttls["verse"], lambda: self._fetch_data(query)
+        )
+
+        response = self._parse_response(data, query)
 
         # Return first passage (should be only one for single verse)
         if not response.passages:
@@ -385,7 +446,7 @@ class LSBibleClient:
 
         return response.passages[0]
 
-    def get_passage(
+    async def get_passage(
         self,
         from_book: BookName | str,
         from_chapter: int,
@@ -414,7 +475,7 @@ class LSBibleClient:
 
         Example:
             # Get John 3:16-18
-            passage = client.get_passage(
+            passage = await client.get_passage(
                 BookName.JOHN, 3, 16,
                 BookName.JOHN, 3, 18
             )
@@ -439,8 +500,15 @@ class LSBibleClient:
             # Different books
             query = f"{from_book_name} {from_chapter}:{from_verse}-{to_book_name} {to_chapter}:{to_verse}"
 
-        # Make request
-        response = self.search(query)
+        # Cache key (normalized)
+        cache_key = f"passage:{query}"
+
+        # Fetch with caching
+        data = await self._with_cache(
+            cache_key, self._cache_ttls["passage"], lambda: self._fetch_data(query)
+        )
+
+        response = self._parse_response(data, query)
 
         # Return first passage
         if not response.passages:
@@ -448,7 +516,7 @@ class LSBibleClient:
 
         return response.passages[0]
 
-    def get_chapter(self, book: BookName | str, chapter: int) -> Passage:
+    async def get_chapter(self, book: BookName | str, chapter: int) -> Passage:
         """
         Get an entire chapter.
 
@@ -461,7 +529,7 @@ class LSBibleClient:
 
         Example:
             # Get all of John chapter 3
-            passage = client.get_chapter(BookName.JOHN, 3)
+            passage = await client.get_chapter(BookName.JOHN, 3)
         """
         # Validate book and chapter exist
         book_number = BookValidator.get_book_number(book)
@@ -471,16 +539,20 @@ class LSBibleClient:
         if chapter < 1 or chapter > max_chapter:
             book_name = BookValidator.normalize_book_name(book)
             raise APIError(
-                f"{book_name} only has {max_chapter} chapters, "
-                f"but chapter {chapter} was requested"
+                f"{book_name} only has {max_chapter} chapters, but chapter {chapter} was requested"
             )
 
-        # Construct query
+        # Construct query and cache key
         book_name = BookValidator.normalize_book_name(book)
         query = f"{book_name} {chapter}"
+        cache_key = f"chapter:{book_name} {chapter}"
 
-        # Make request
-        response = self.search(query)
+        # Fetch with caching
+        data = await self._with_cache(
+            cache_key, self._cache_ttls["chapter"], lambda: self._fetch_data(query)
+        )
+
+        response = self._parse_response(data, query)
 
         # Return first passage
         if not response.passages:
@@ -489,17 +561,18 @@ class LSBibleClient:
         return response.passages[0]
 
     def clear_cache(self) -> None:
-        """Clear the response cache."""
-        self._cache.clear()
+        """Clear the response cache (only works with MemoryCacheProvider)."""
+        if self._cache_provider and hasattr(self._cache_provider, "clear"):
+            self._cache_provider.clear()
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Close the HTTP client."""
-        self._client.close()
+        await self._client.aclose()
 
-    def __enter__(self):
-        """Context manager entry."""
+    async def __aenter__(self):
+        """Async context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.close()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()

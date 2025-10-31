@@ -40,7 +40,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
-    "respx>=0.21.0",
+    "respx>=0.22.0",
     "inline-snapshot>=0.7.0",
 ]
 
@@ -141,11 +141,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
-]
-
-[tool.uv]
-dev-dependencies = [
-    "respx>=0.22.0",
 ]
 
 [[tool.uv.index]]

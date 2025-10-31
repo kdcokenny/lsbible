@@ -70,29 +70,33 @@ pip install lsbible
 ## Quick Start
 
 ```python
+import asyncio
 from lsbible import LSBibleClient, BookName
 
-# Initialize client (use context manager for automatic cleanup)
-with LSBibleClient() as client:
-    # Get a single verse
-    passage = client.get_verse(BookName.JOHN, 3, 16)
-    print(f"Reference: {passage.title}")
-    print(f"Text: {passage.verses[0].plain_text}")
+async def main():
+    # Initialize client (use async context manager for automatic cleanup)
+    async with LSBibleClient() as client:
+        # Get a single verse
+        passage = await client.get_verse(BookName.JOHN, 3, 16)
+        print(f"Reference: {passage.title}")
+        print(f"Text: {passage.verses[0].plain_text}")
 
-    # Get a passage range
-    passage = client.get_passage(
-        BookName.JOHN, 3, 16,
-        BookName.JOHN, 3, 18
-    )
-    print(f"Got {passage.verse_count} verses")
+        # Get a passage range
+        passage = await client.get_passage(
+            BookName.JOHN, 3, 16,
+            BookName.JOHN, 3, 18
+        )
+        print(f"Got {passage.verse_count} verses")
 
-    # Get an entire chapter
-    chapter = client.get_chapter(BookName.JOHN, 3)
-    print(f"John 3 has {chapter.verse_count} verses")
+        # Get an entire chapter
+        chapter = await client.get_chapter(BookName.JOHN, 3)
+        print(f"John 3 has {chapter.verse_count} verses")
 
-    # Search for text
-    results = client.search("love")
-    print(f"Found {results.match_count} passages")
+        # Search for text
+        results = await client.search("love")
+        print(f"Found {results.match_count} passages")
+
+asyncio.run(main())
 ```
 
 ## SDK Usage Guide
@@ -290,14 +294,26 @@ print(f"Book number: {ref.book_number}") # 19 (Psalms is the 19th book)
 #### Configuring the Client
 
 ```python
-# Customize cache TTL and timeout
-client = LSBibleClient(
-    cache_ttl=7200,    # Cache responses for 2 hours (default: 3600)
+from lsbible import LSBibleClient, MemoryCacheProvider, CacheTTL
+
+# Configure cache with per-operation TTLs
+async with LSBibleClient(
+    cache={
+        "provider": MemoryCacheProvider(),
+        "ttl": {
+            "verse": CacheTTL.BIBLE_CONTENT,   # 30 days
+            "passage": CacheTTL.BIBLE_CONTENT, # 30 days
+            "chapter": CacheTTL.BIBLE_CONTENT, # 30 days
+            "search": CacheTTL.SEARCH_RESULTS, # 7 days
+        }
+    },
     timeout=60,        # Request timeout in seconds (default: 30)
     build_id="custom"  # Optional: provide build ID (default: auto-detect)
-)
+) as client:
+    # Use the client
+    passage = await client.get_verse("John", 3, 16)
 
-# Clear cache manually
+# Clear cache manually (MemoryCacheProvider only)
 client.clear_cache()
 
 # Use custom headers (e.g., for tracking)
@@ -305,7 +321,8 @@ custom_headers = {
     "X-App-Name": "My Bible App",
     "X-App-Version": "1.0.0"
 }
-client = LSBibleClient(headers=custom_headers)
+async with LSBibleClient(headers=custom_headers) as client:
+    results = await client.search("love")
 ```
 
 ### Search Distribution Metadata
@@ -489,24 +506,36 @@ with LSBibleClient() as client:
 
 ### LSBibleClient
 
-Main client class for interacting with the LSBible API.
+Main async client class for interacting with the LSBible API.
 
-#### `__init__(cache_ttl=3600, timeout=30, build_id=None, headers=None)`
+#### `__init__(cache=None, timeout=30, build_id=None, headers=None)`
 
 Initialize the client.
 
 **Parameters:**
-- `cache_ttl` (int): Cache time-to-live in seconds (default: 3600)
+- `cache` (CacheOptions | None): Cache configuration (optional)
 - `timeout` (int): Request timeout in seconds (default: 30)
 - `build_id` (str, optional): Next.js build ID (auto-detected if not provided)
 - `headers` (dict, optional): Custom HTTP headers
 
 **Example:**
 ```python
-client = LSBibleClient(cache_ttl=7200, timeout=60)
+from lsbible import LSBibleClient, MemoryCacheProvider, CacheTTL
+
+async with LSBibleClient(
+    cache={
+        "provider": MemoryCacheProvider(),
+        "ttl": {
+            "verse": CacheTTL.BIBLE_CONTENT,
+            "search": CacheTTL.SEARCH_RESULTS,
+        }
+    },
+    timeout=60
+) as client:
+    passage = await client.get_verse("John", 3, 16)
 ```
 
-#### `search(query: str) -> SearchResponse`
+#### `async search(query: str) -> SearchResponse`
 
 Search for passages containing text.
 
@@ -518,7 +547,7 @@ Search for passages containing text.
 **Raises:**
 - `APIError`: If API request fails
 
-#### `get_verse(book, chapter, verse) -> Passage`
+#### `async get_verse(book, chapter, verse) -> Passage`
 
 Get a specific verse with validated parameters.
 
@@ -533,7 +562,7 @@ Get a specific verse with validated parameters.
 - `InvalidReferenceError`: If reference is invalid
 - `APIError`: If API request fails
 
-#### `get_passage(from_book, from_chapter, from_verse, to_book, to_chapter, to_verse) -> Passage`
+#### `async get_passage(from_book, from_chapter, from_verse, to_book, to_chapter, to_verse) -> Passage`
 
 Get a passage spanning multiple verses.
 
@@ -551,7 +580,7 @@ Get a passage spanning multiple verses.
 - `InvalidReferenceError`: If any reference is invalid
 - `APIError`: If API request fails
 
-#### `get_chapter(book, chapter) -> Passage`
+#### `async get_chapter(book, chapter) -> Passage`
 
 Get an entire chapter.
 
@@ -567,9 +596,9 @@ Get an entire chapter.
 
 #### `clear_cache() -> None`
 
-Clear the response cache.
+Clear the response cache (only works with MemoryCacheProvider).
 
-#### `close() -> None`
+#### `async close() -> None`
 
 Close the HTTP client.
 
@@ -683,6 +712,73 @@ Response from a search or verse lookup:
 - `passage_count` (int): Number of passages returned
 - `total_verses` (int): Total verses across all passages
 - `has_search_metadata` (bool): Whether response includes distribution metadata
+
+## Caching
+
+The SDK supports pluggable caching through the `CacheProvider` protocol, allowing you to choose the right caching strategy for your deployment environment.
+
+### Built-in Cache Providers
+
+**MemoryCacheProvider** - In-memory caching with TTL support
+- ✅ Local development, testing, single-process apps
+- ❌ Multi-process apps, high-traffic production servers
+
+**NoopCacheProvider** - Disables caching entirely
+- Useful for debugging or when caching isn't beneficial
+
+### Cache Configuration
+
+```python
+from lsbible import LSBibleClient, MemoryCacheProvider, CacheTTL
+
+async with LSBibleClient(
+    cache={
+        "provider": MemoryCacheProvider(),
+        "ttl": {
+            "verse": CacheTTL.BIBLE_CONTENT,   # 30 days
+            "passage": CacheTTL.BIBLE_CONTENT, # 30 days
+            "chapter": CacheTTL.BIBLE_CONTENT, # 30 days
+            "search": CacheTTL.SEARCH_RESULTS, # 7 days
+        }
+    }
+) as client:
+    passage = await client.get_verse("John", 3, 16)
+```
+
+**Recommended TTL constants:**
+- `CacheTTL.BIBLE_CONTENT` (30 days) - Bible text is immutable
+- `CacheTTL.SEARCH_RESULTS` (7 days) - May change with API updates
+- `CacheTTL.STATIC` (1 year) - Never changes
+
+### Custom Cache Providers
+
+Implement the `CacheProvider` protocol for custom backends like Redis, Memcached, or DynamoDB:
+
+```python
+from typing import Any
+
+class CacheProvider:
+    async def get(self, key: str) -> Any | None:
+        """Get value from cache, return None if not found"""
+        ...
+
+    async def set(self, key: str, value: Any, ttl: int) -> None:
+        """Set value in cache with TTL in seconds"""
+        ...
+```
+
+**Complete examples:**
+- [cache_memory.py](./examples/cache_memory.py) - Demonstrates cache hits/misses and manual clearing
+- [cache_redis.py](./examples/cache_redis.py) - Full Redis implementation with redis-py
+- [cache_custom.py](./examples/cache_custom.py) - Template for building your own cache provider
+
+### Cache Keys
+
+The SDK uses these cache key patterns:
+- `verse:{book} {chapter}:{verse}` - Single verses
+- `passage:{query}` - Passage ranges
+- `chapter:{book} {chapter}` - Full chapters
+- `search:{query}` - Text searches
 
 ## Development
 
