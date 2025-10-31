@@ -13,7 +13,7 @@
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.20.2",
         "agents": "^0.2.19",
-        "lsbible": "^0.1.0",
+        "lsbible": "^0.3.0",
       },
       "devDependencies": {
         "@biomejs/biome": "2.3.2",
@@ -734,8 +734,6 @@
     "zod-to-ts": ["zod-to-ts@1.2.0", "", { "peerDependencies": { "typescript": "^4.9.4 || ^5.0.2", "zod": "^3" } }, "sha512-x30XE43V+InwGpvTySRNz9kB7qFU8DlyEy7BsSTCHPH1R0QasMmHWZDCzYm6bVXtj/9NNJAZF3jW8rzFvH5OFA=="],
 
     "@jridgewell/gen-mapping/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
-
-    "@lsbible/mcp-server/lsbible": ["lsbible@0.1.0", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.20.2", "linkedom": "^0.18.5", "zod": "^3.23.8" }, "bin": { "lsbible-mcp": "dist/mcp/stdio.js" } }, "sha512-DdNtqX0rR2C7xQPp7tcoGKNTvVkYl3ByfQx+VrCvcqNPa5Adp2Vgt4TdFAYdGR9BxHo4bHYUFjVeCpDTzpIEjQ=="],
 
     "body-parser/iconv-lite": ["iconv-lite@0.6.3", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, "sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw=="],
 
