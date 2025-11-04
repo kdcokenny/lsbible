@@ -220,7 +220,7 @@ Example: Searching for "love" shows 436 total matches, with 101 in Pauline Epist
 ### ✅ TypeScript SDK (Stable)
 
 **Status:** Production ready
-**Version:** 0.1.0
+**Version:** 0.3.0
 **Node.js:** 18+
 
 ```bash
@@ -239,7 +239,7 @@ npm install lsbible
 ### ✅ Python SDK (Stable)
 
 **Status:** Production ready
-**Version:** 0.2.0
+**Version:** 0.3.0
 **Python:** 3.12+
 
 ```bash
